@@ -1,85 +1,104 @@
 /**
- * FolkaDrive design tokens — mirror dari DESIGN.md (BMW corporate).
+ * FolkaDrive design tokens — Webflow-inspired (DESIGN.md).
  * Single source of truth. Jangan invent token baru di luar file ini.
  */
 
 :root {
-  /* Brand & Accent */
-  --color-primary: #1c69d4;
-  --color-primary-active: #0653b6;
-  --color-primary-disabled: #d6d6d6;
+  /* Brand */
+  --color-primary: #080808;
+  --color-on-primary: #ffffff;
 
-  /* M tricolor (motorsport — pakai jarang) */
-  --color-m-blue-light: #0066b1;
-  --color-m-blue-dark: #1c69d4;
-  --color-m-red: #e22718;
+  /* 5-stop chromatic accent (kategori product surface) */
+  --color-accent-purple: #7a3dff;
+  --color-accent-pink: #ed52cb;
+  --color-accent-blue: #3b89ff;
+  --color-accent-blue-deep: #006acc;
+  --color-accent-blue-info: #146ef5;
+  --color-accent-orange: #ff6b00;
+  --color-accent-green: #00d722;
+  --color-accent-yellow: #ffae13;
+  --color-accent-red: #ee1d36;
 
   /* Surface */
   --color-canvas: #ffffff;
-  --color-surface-soft: #f7f7f7;
-  --color-surface-card: #fafafa;
-  --color-surface-strong: #ebebeb;
-  --color-surface-dark: #1a2129;
-  --color-surface-dark-elevated: #262e38;
+  --color-canvas-soft: #fafafa;
 
   /* Hairlines */
-  --color-hairline: #e6e6e6;
-  --color-hairline-strong: #cccccc;
+  --color-hairline: #d8d8d8;
 
   /* Text */
-  --color-ink: #262626;
-  --color-body: #3c3c3c;
-  --color-body-strong: #1a1a1a;
-  --color-muted: #6b6b6b;
-  --color-muted-soft: #9a9a9a;
-  --color-on-primary: #ffffff;
-  --color-on-dark: #ffffff;
-  --color-on-dark-soft: #bbbbbb;
+  --color-ink: #080808;
+  --color-ink-strong: #222222;
+  --color-body: #363636;
+  --color-body-mid: #5a5a5a;
+  --color-mute: #898989;
+  --color-mute-soft: #ababab;
 
   /* Semantic */
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #dc2626;
+  --color-success: #00d722;
+  --color-warning: #ffae13;
+  --color-error: #ee1d36;
+  --color-info: #146ef5;
 
-  /* Radius — 0 hampir semua, lihat DESIGN.md */
+  /* Radius — soft */
   --radius-none: 0px;
   --radius-xs: 2px;
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-pill: 9999px;
+  --radius-lg: 12px;
   --radius-full: 9999px;
 
-  /* Spacing */
-  --space-xxs: 4px;
-  --space-xs: 8px;
-  --space-sm: 12px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-xxl: 48px;
-  --space-section: 80px;
+  /* Spacing — base 4px */
+  --space-xxs: 2px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 48px;
+  --space-5xl: 64px;
+  --space-section: 96px;
 
-  /* Typography — Inter (BMW Type Next Latin substitute) */
-  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Typography — Inter substitutes WF Visual Sans Variable */
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "Inconsolata", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --text-display-xl: 64px;
-  --text-display-lg: 48px;
+  --text-display-xxl: 80px;
+  --text-display-xl: 56px;
+  --text-display-lg: 44.8px;
   --text-display-md: 32px;
   --text-display-sm: 24px;
-  --text-title-lg: 20px;
-  --text-title-md: 18px;
-  --text-title-sm: 16px;
+  --text-display-xs: 20px;
+  --text-body-lg: 28.8px;
   --text-body-md: 16px;
   --text-body-sm: 14px;
-  --text-caption: 12px;
-  --text-label-uppercase: 13px;
-  --text-button: 14px;
+  --text-caption: 12.8px;
+  --text-eyebrow: 15px;
+  --text-eyebrow-sm: 12px;
+  --text-button: 16px;
+
+  /* Tracking */
+  --tracking-display-xxl: -0.8px;
+  --tracking-body-md: -0.16px;
+  --tracking-eyebrow: 1.5px;
 
   /* Container */
   --container-max: 1440px;
 
-  /* Easing */
+  /* Easing & duration */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 150ms;
   --duration-normal: 240ms;
+
+  /* Shadow — Webflow Level 2 (layered drop) */
+  --shadow-level-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02);
+  --shadow-level-2: 0 84px 24px rgba(0, 0, 0, 0), 0 54px 22px rgba(0, 0, 0, 0.01),
+    0 30px 18px rgba(0, 0, 0, 0.04), 0 13px 13px rgba(0, 0, 0, 0.08),
+    0 3px 7px rgba(0, 0, 0, 0.09);
+  --shadow-level-3: 0 84px 24px rgba(0, 0, 0, 0), 0 54px 22px rgba(0, 0, 0, 0.02),
+    0 30px 18px rgba(0, 0, 0, 0.06), 0 13px 13px rgba(0, 0, 0, 0.1),
+    0 3px 7px rgba(0, 0, 0, 0.12);
+  --shadow-modal: 0 24px 24px rgba(0, 0, 0, 0.26), 0 6px 13px rgba(0, 0, 0, 0.29);
 }

@@ -17,23 +17,21 @@ export function LangSwitch() {
   };
 
   return (
-    <div className="flex items-center gap-1 text-[12px] font-bold uppercase tracking-[1px]">
-      {locales.map((l, i) => (
-        <span key={l} className="flex items-center gap-1">
-          {i > 0 && <span className="text-[var(--color-hairline-strong)]">/</span>}
-          <button
-            type="button"
-            onClick={() => setLocale(l)}
-            className={
-              l === locale
-                ? "text-[var(--color-ink)]"
-                : "text-[var(--color-muted)] hover:text-[var(--color-ink)]"
-            }
-            aria-pressed={l === locale}
-          >
-            {l.toUpperCase()}
-          </button>
-        </span>
+    <div className="hidden sm:inline-flex items-center gap-px bg-[var(--color-canvas-soft)] border border-[var(--color-hairline)] rounded-[6px] p-0.5">
+      {locales.map((l) => (
+        <button
+          key={l}
+          type="button"
+          onClick={() => setLocale(l)}
+          className={
+            l === locale
+              ? "px-2.5 py-1 text-[12px] font-medium rounded-[4px] bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-sm"
+              : "px-2.5 py-1 text-[12px] font-medium rounded-[4px] text-[var(--color-mute)] hover:text-[var(--color-ink)]"
+          }
+          aria-pressed={l === locale}
+        >
+          {l.toUpperCase()}
+        </button>
       ))}
     </div>
   );
