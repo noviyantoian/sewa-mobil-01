@@ -221,3 +221,14 @@ pnpm format       # prettier --write
 - [ ] Booking wizard klik-through end-to-end dengan data mock.
 - [ ] Token DESIGN.md dipakai konsisten (audit warna/radius).
 - [ ] Commit conventional & atomik.
+
+---
+
+## 13. SaaS / Multi-Tenant (RENCANA — bukan sprint UI ini)
+
+Arah produk: ubah mockup single-site jadi **white-label multi-tenant SaaS** (banyak bisnis rental, fitur dibatasi per paket). **Belum diimplementasi** — masih mockup + `lib/mock/*`. Jangan koding ini tanpa konfirmasi.
+
+- Harga & paket + model finansial: [`docs/PRICING.md`](docs/PRICING.md)
+- Arsitektur, struktur DB (ER), UML, flowchart, roadmap berfase: [`docs/SAAS-PLAN.md`](docs/SAAS-PLAN.md)
+
+Inti: tenant via host (subdomain/custom domain), shared DB + `tenant_id` + **RLS**, feature-flag per paket (`lib/tenant/features.ts` — belum ada), booking via WhatsApp di semua paket, bayar online hanya Enterprise (on-request).

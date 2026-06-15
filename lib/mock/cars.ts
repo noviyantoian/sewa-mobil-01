@@ -211,6 +211,7 @@ export function filterCars(opts: {
   category?: CarCategory | "all";
   transmission?: CarTransmission | "all";
   capacityMin?: number;
+  priceMin?: number;
   priceMax?: number;
   mode?: "selfDrive" | "withDriver";
 }): Car[] {
@@ -218,9 +219,10 @@ export function filterCars(opts: {
     if (opts.category && opts.category !== "all" && c.category !== opts.category) return false;
     if (opts.transmission && opts.transmission !== "all" && c.transmission !== opts.transmission) return false;
     if (opts.capacityMin && c.capacity < opts.capacityMin) return false;
-    if (opts.priceMax) {
+    if (opts.priceMin || opts.priceMax) {
       const rate = opts.mode === "withDriver" ? c.rateWithDriver : c.rateSelfDrive;
-      if (rate > opts.priceMax) return false;
+      if (opts.priceMin && rate < opts.priceMin) return false;
+      if (opts.priceMax && rate > opts.priceMax) return false;
     }
     return true;
   });

@@ -1,291 +1,253 @@
 "use client";
 
-import Image from "next/image";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import Image from "next/image";
+import { CheckCircle, CaretLeft, LockSimple } from "@phosphor-icons/react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
-import { Input, Label, Select } from "@/components/ui/Input";
+import { HoldTimer } from "@/components/booking/HoldTimer";
+import { Stepper } from "@/components/booking/Stepper";
+import { type PaymentMethod } from "@/components/booking/PaymentMethods";
+import { PriceSummary, type PriceBreakdown } from "@/components/booking/PriceSummary";
+import {
+  StepTrip,
+  StepIdentity,
+  StepPayment,
+  ADDON_PRICES,
+  type Mode,
+  type Scheme,
+  type AddonKey,
+  type IdentityForm,
+} from "@/components/booking/CheckoutSteps";
 import { useT } from "@/lib/i18n/I18nProvider";
-import { formatIDR, daysBetween } from "@/lib/format";
+import { formatDate, formatDateRange, daysBetween } from "@/lib/format";
 import { getCarBySlug } from "@/lib/mock/cars";
-import { locations } from "@/lib/mock/locations";
 
-type Step = 1 | 2 | 3 | 4;
+const MOCK_BOOKING_ID = "FK-26-0006";
 
-export default function CheckoutPage() {
-  const params = useSearchParams();
-  const router = useRouter();
+const identitySchema = z.object({
+  fullName: z.string().min(3),
+  phone: z.string().min(8),
+  email: z.string().email(),
+  idType: z.enum(["ktp", "passport"]),
+}) satisfies z.ZodType<IdentityForm>;
+
+function nextDay(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function Checkout() {
   const t = useT();
-  const car = getCarBySlug(params.get("car") ?? "innova-zenix");
-  const mode = (params.get("mode") as "selfDrive" | "withDriver") ?? "selfDrive";
+  const router = useRouter();
+  const params = useSearchParams();
 
-  const [step, setStep] = useState<Step>(1);
-  const [pickupLoc, setPickupLoc] = useState(locations[0].id);
-  const [returnLoc, setReturnLoc] = useState(locations[0].id);
-  const today = new Date();
-  const def1 = new Date(); def1.setDate(today.getDate() + 1);
-  const def2 = new Date(); def2.setDate(today.getDate() + 3);
-  const [pickupAt, setPickupAt] = useState(def1.toISOString().slice(0, 16));
-  const [returnAt, setReturnAt] = useState(def2.toISOString().slice(0, 16));
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [ktp, setKtp] = useState<File | null>(null);
-  const [sim, setSim] = useState<File | null>(null);
-  const [payMethod, setPayMethod] = useState<"qris" | "va" | "ewallet" | "card">("qris");
-  const [agree, setAgree] = useState(false);
+  const slug = params.get("slug") ?? "";
+  const car = getCarBySlug(slug);
+  const mode: Mode = params.get("mode") === "withDriver" ? "withDriver" : "selfDrive";
+  const from = params.get("from") ?? nextDay(1);
+  const to = params.get("to") ?? nextDay(4);
 
-  const [holdSec, setHoldSec] = useState(15 * 60);
   useEffect(() => {
-    if (holdSec <= 0) return;
-    const id = setInterval(() => setHoldSec((s) => s - 1), 1000);
-    return () => clearInterval(id);
-  }, [holdSec]);
+    if (!car) router.replace("/cari");
+  }, [car, router]);
 
-  if (!car) {
-    return (
-      <>
-        <Header />
-        <main className="container-folka py-32 text-center">
-          <p>Mobil tidak ditemukan.</p>
-        </main>
-        <Footer />
-      </>
+  const [step, setStep] = useState(0);
+  const [addons, setAddons] = useState<Record<AddonKey, boolean>>({
+    insurance: false,
+    child: false,
+    delivery: false,
+  });
+  const [scheme, setScheme] = useState<Scheme>("full");
+  const [payment, setPayment] = useState<PaymentMethod>("qris");
+  const [agree, setAgree] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const {
+    register,
+    formState: { errors, isValid },
+    watch,
+  } = useForm<IdentityForm>({
+    resolver: zodResolver(identitySchema),
+    mode: "onChange",
+    defaultValues: { idType: "ktp" },
+  });
+  const idType = watch("idType");
+
+  const price: PriceBreakdown = useMemo(() => {
+    const rate = car ? (mode === "withDriver" ? car.rateWithDriver : car.rateSelfDrive) : 0;
+    const days = daysBetween(from, to);
+    const rentalSubtotal = rate * days;
+    const addonsTotal = (Object.keys(addons) as AddonKey[]).reduce(
+      (sum, k) => sum + (addons[k] ? ADDON_PRICES[k] : 0),
+      0
     );
-  }
+    const deposit = car?.deposit ?? 0;
+    const goods = rentalSubtotal + addonsTotal;
+    const total = goods + deposit;
+    const dueNow = (scheme === "dp" ? Math.round(goods * 0.3) : goods) + deposit;
+    return { days, rentalSubtotal, addonsTotal, deposit, total, dueNow };
+  }, [car, mode, from, to, addons, scheme]);
 
-  const days = daysBetween(pickupAt, returnAt);
-  const subtotal = (mode === "withDriver" ? car.rateWithDriver : car.rateSelfDrive) * days;
-  const total = subtotal;
+  if (!car) return <div className="min-h-[60vh]" />;
 
-  const mins = String(Math.floor(holdSec / 60)).padStart(2, "0");
-  const secs = String(holdSec % 60).padStart(2, "0");
+  const steps = [t("checkout.step1"), t("checkout.step2"), t("checkout.step3")];
+  const canPlace = isValid && agree;
 
-  const next = () => setStep((s) => (s < 4 ? ((s + 1) as Step) : s));
-  const back = () => setStep((s) => (s > 1 ? ((s - 1) as Step) : s));
-
-  const submit = () => {
-    const id = `FK-26-${Math.floor(1000 + Math.random() * 9000)}`;
-    router.push(`/konfirmasi/${id}`);
+  const place = () => {
+    setSubmitting(true);
+    toast.success(t("confirm.title"));
+    setTimeout(() => router.push(`/konfirmasi/${MOCK_BOOKING_ID}`), 600);
   };
 
-  const steps: Array<{ n: Step; key: "stepDate" | "stepIdentity" | "stepPayment" | "stepDone" }> = [
-    { n: 1, key: "stepDate" },
-    { n: 2, key: "stepIdentity" },
-    { n: 3, key: "stepPayment" },
-    { n: 4, key: "stepDone" },
-  ];
+  return (
+    <main className="bg-[var(--color-canvas-warm)] pb-20">
+      <div className="container-folka pt-7">
+        <button type="button" onClick={() => router.back()} className="link-arrow cursor-pointer">
+          <CaretLeft size={16} weight="bold" />
+          {t("common.back")}
+        </button>
+        <h1 className="mt-4 display-sm">{t("checkout.title")}</h1>
+      </div>
 
+      <div className="container-folka mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
+        <div className="flex flex-col gap-6">
+          <HoldTimer />
+          <div className="rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 sm:p-6">
+            <Stepper steps={steps} current={step} />
+            <div className="mt-7">
+              {step === 0 && <StepTrip car={car} mode={mode} range={formatDateRange(from, to)} />}
+              {step === 1 && <StepIdentity register={register} errors={errors} idType={idType} />}
+              {step === 2 && (
+                <StepPayment
+                  addons={addons}
+                  setAddons={setAddons}
+                  scheme={scheme}
+                  setScheme={setScheme}
+                  payment={payment}
+                  setPayment={setPayment}
+                />
+              )}
+            </div>
+
+            <div className="mt-8 flex items-center justify-between gap-3 border-t border-[var(--color-hairline)] pt-5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="md"
+                onClick={() => setStep((s) => Math.max(0, s - 1))}
+                disabled={step === 0}
+              >
+                {t("common.back")}
+              </Button>
+              {step < 2 ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  onClick={() => setStep((s) => Math.min(2, s + 1))}
+                  disabled={step === 1 && !isValid}
+                >
+                  {t("common.next")}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  loading={submitting}
+                  disabled={!canPlace}
+                  onClick={place}
+                >
+                  {t("checkout.placeOrder")}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 sm:p-6">
+            <h2 className="text-[16px] font-bold tracking-[-0.02em] text-[var(--color-ink)]">
+              {t("checkout.cancelPolicy")}
+            </h2>
+            <ul className="mt-3 flex flex-col gap-2 text-[14px] text-[var(--color-body)]">
+              <li className="flex items-center gap-2">
+                <CheckCircle size={17} weight="fill" className="text-[var(--color-success)]" />
+                {t("checkout.cancelFree", { date: formatDate(from) })}
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-mute)]" aria-hidden />
+                {t("checkout.cancelPartial")}
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <aside>
+          <div className="sticky top-24 flex flex-col gap-5 rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 shadow-md sm:p-6">
+            <div className="flex items-center gap-3">
+              <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-[10px] bg-[var(--color-canvas-soft)]">
+                <Image src={car.exterior} alt={car.name} fill sizes="96px" className="object-cover" />
+              </div>
+              <div className="min-w-0">
+                <span className="label-caps">{car.brand}</span>
+                <p className="truncate text-[15px] font-bold text-[var(--color-ink)]">{car.name}</p>
+                <p className="text-[12px] text-[var(--color-mute)]">
+                  {mode === "withDriver" ? t("hero.modeWithDriver") : t("hero.modeSelfDrive")}
+                </p>
+              </div>
+            </div>
+
+            <div className="border-t border-[var(--color-hairline)] pt-5">
+              <PriceSummary price={price} />
+            </div>
+
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-[10px] bg-[var(--color-canvas-soft)] p-3 text-[13px] text-[var(--color-body)]">
+              <input
+                type="checkbox"
+                checked={agree}
+                onChange={(e) => setAgree(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--color-accent)]"
+              />
+              {t("checkout.agree")}
+            </label>
+
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              className="w-full"
+              loading={submitting}
+              disabled={!canPlace}
+              onClick={place}
+            >
+              {t("checkout.placeOrder")}
+            </Button>
+
+            <p className="inline-flex items-center justify-center gap-1.5 text-[12px] text-[var(--color-mute)]">
+              <LockSimple size={14} weight="fill" className="text-[var(--color-success)]" />
+              {t("checkout.secure")}
+            </p>
+          </div>
+        </aside>
+      </div>
+    </main>
+  );
+}
+
+export default function CheckoutPage() {
   return (
     <>
       <Header />
-      <main className="bg-[var(--color-canvas)] py-10 md:py-16">
-        <div className="container-folka">
-          <ol className="flex items-center mb-10 overflow-x-auto">
-            {steps.map((s, i) => (
-              <li key={s.n} className="flex items-center flex-shrink-0">
-                <div
-                  className={
-                    s.n <= step
-                      ? "w-8 h-8 bg-[var(--color-primary)] text-[var(--color-on-primary)] flex items-center justify-center text-[13px] font-bold"
-                      : "w-8 h-8 bg-[var(--color-surface-card)] text-[var(--color-muted)] border border-[var(--color-hairline)] flex items-center justify-center text-[13px] font-bold"
-                  }
-                >
-                  {s.n}
-                </div>
-                <span
-                  className={
-                    s.n === step
-                      ? "ml-3 text-[13px] font-bold uppercase tracking-[1.5px] text-[var(--color-ink)]"
-                      : "ml-3 text-[13px] font-bold uppercase tracking-[1.5px] text-[var(--color-muted)] hidden md:inline"
-                  }
-                >
-                  {t(`checkout.${s.key}`)}
-                </span>
-                {i < steps.length - 1 && (
-                  <div className="w-8 md:w-16 h-px bg-[var(--color-hairline)] mx-3" />
-                )}
-              </li>
-            ))}
-          </ol>
-
-          <div className="mb-8 p-3 bg-[var(--color-surface-soft)] text-[13px] text-[var(--color-body)] flex items-center justify-between">
-            <span>
-              {holdSec > 0
-                ? t("checkout.holdTimer", { minutes: mins, seconds: secs })
-                : t("checkout.holdExpired")}
-            </span>
-          </div>
-
-          <div className="grid gap-10 md:grid-cols-12">
-            <section className="md:col-span-7 lg:col-span-8">
-              {step === 1 && (
-                <div className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <Label htmlFor="pl">{t("checkout.pickupLocation")}</Label>
-                      <Select id="pl" value={pickupLoc} onChange={(e) => setPickupLoc(e.target.value)}>
-                        {locations.map((l) => (
-                          <option key={l.id} value={l.id}>{l.city} - {l.area}</option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="rl">{t("checkout.returnLocation")}</Label>
-                      <Select id="rl" value={returnLoc} onChange={(e) => setReturnLoc(e.target.value)}>
-                        {locations.map((l) => (
-                          <option key={l.id} value={l.id}>{l.city} - {l.area}</option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="pa">{t("checkout.pickupDate")}</Label>
-                      <Input id="pa" type="datetime-local" value={pickupAt} onChange={(e) => setPickupAt(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label htmlFor="ra">{t("checkout.returnDate")}</Label>
-                      <Input id="ra" type="datetime-local" value={returnAt} onChange={(e) => setReturnAt(e.target.value)} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="md:col-span-2">
-                      <Label htmlFor="n">{t("checkout.identityName")}</Label>
-                      <Input id="n" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama Lengkap" />
-                    </div>
-                    <div>
-                      <Label htmlFor="em">{t("checkout.identityEmail")}</Label>
-                      <Input id="em" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@domain.com" />
-                    </div>
-                    <div>
-                      <Label htmlFor="ph">{t("checkout.identityPhone")}</Label>
-                      <Input id="ph" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08xx-xxxx-xxxx" />
-                    </div>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2 mt-6">
-                    <div>
-                      <Label htmlFor="ktp">{t("checkout.identityKtp")}</Label>
-                      <Input id="ktp" type="file" accept="image/*" onChange={(e) => setKtp(e.target.files?.[0] ?? null)} />
-                      <p className="text-[12px] text-[var(--color-muted)] mt-2">
-                        {ktp ? ktp.name : t("checkout.identityUploadHint")}
-                      </p>
-                    </div>
-                    <div>
-                      <Label htmlFor="sim">{t("checkout.identitySim")}</Label>
-                      <Input id="sim" type="file" accept="image/*" onChange={(e) => setSim(e.target.files?.[0] ?? null)} />
-                      <p className="text-[12px] text-[var(--color-muted)] mt-2">
-                        {sim ? sim.name : t("checkout.identityUploadHint")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {step === 3 && (
-                <div>
-                  <Label>{t("checkout.paymentMethod")}</Label>
-                  <div className="space-y-3">
-                    {([
-                      ["qris", "paymentQris"],
-                      ["va", "paymentVa"],
-                      ["ewallet", "paymentEwallet"],
-                      ["card", "paymentCard"],
-                    ] as const).map(([v, k]) => (
-                      <label
-                        key={v}
-                        className={
-                          payMethod === v
-                            ? "flex items-center gap-3 p-4 border-2 border-[var(--color-primary)] cursor-pointer bg-[var(--color-canvas)]"
-                            : "flex items-center gap-3 p-4 border border-[var(--color-hairline)] cursor-pointer bg-[var(--color-canvas)] hover:border-[var(--color-ink)]"
-                        }
-                      >
-                        <input
-                          type="radio"
-                          name="pay"
-                          value={v}
-                          checked={payMethod === v}
-                          onChange={() => setPayMethod(v)}
-                          className="accent-[var(--color-primary)]"
-                        />
-                        <span className="text-[15px] font-bold">{t(`checkout.${k}`)}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <label className="mt-8 flex items-start gap-3 cursor-pointer text-[14px]">
-                    <input
-                      type="checkbox"
-                      checked={agree}
-                      onChange={(e) => setAgree(e.target.checked)}
-                      className="mt-1 accent-[var(--color-primary)]"
-                    />
-                    <span>{t("checkout.agreeTerms")}</span>
-                  </label>
-                </div>
-              )}
-
-              {step === 4 && (
-                <div className="text-center py-10">
-                  <div className="w-16 h-16 mx-auto mb-6 bg-[var(--color-success)] text-white flex items-center justify-center text-[28px] font-bold">
-                    {"v"}
-                  </div>
-                  <h2 className="text-[28px] font-bold mb-3">{t("checkout.doneTitle")}</h2>
-                  <p className="text-[var(--color-body)] max-w-md mx-auto">{t("checkout.doneSubtitle")}</p>
-                </div>
-              )}
-
-              <div className="mt-10 flex gap-3 justify-between">
-                <Button variant="secondary" onClick={back} disabled={step === 1}>
-                  {t("checkout.back")}
-                </Button>
-                {step < 3 && (
-                  <Button variant="primary" onClick={next}>
-                    {t("checkout.next")}
-                  </Button>
-                )}
-                {step === 3 && (
-                  <Button variant="primary" disabled={!agree} onClick={submit}>
-                    {t("checkout.pay", { amount: formatIDR(total + car.deposit) })}
-                  </Button>
-                )}
-              </div>
-            </section>
-
-            <aside className="md:col-span-5 lg:col-span-4">
-              <div className="bg-[var(--color-surface-card)] p-6 md:sticky md:top-24">
-                <div className="relative aspect-[4/3] bg-[var(--color-canvas)] overflow-hidden mb-4">
-                  <Image src={car.exterior} alt={car.name} fill sizes="40vw" className="object-cover" />
-                </div>
-                <div className="text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--color-muted)] mb-1">
-                  {car.brand}
-                </div>
-                <h3 className="text-[20px] font-bold mb-4">{car.name}</h3>
-
-                <h4 className="label-uppercase text-[var(--color-muted)] mb-3">{t("checkout.summary")}</h4>
-                <dl className="space-y-2 text-[14px]">
-                  <div className="flex justify-between">
-                    <dt>{t("checkout.summarySubtotal", { days })}</dt>
-                    <dd>{formatIDR(subtotal)}</dd>
-                  </div>
-                  <div className="flex justify-between text-[var(--color-muted)]">
-                    <dt>{t("checkout.summaryDeposit")}</dt>
-                    <dd>{formatIDR(car.deposit)}</dd>
-                  </div>
-                  <div className="border-t border-[var(--color-hairline)] pt-3 flex justify-between font-bold text-[var(--color-ink)] text-[18px]">
-                    <dt>{t("checkout.summaryTotal")}</dt>
-                    <dd>{formatIDR(total + car.deposit)}</dd>
-                  </div>
-                </dl>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </main>
+      <Suspense fallback={<div className="min-h-[60vh]" />}>
+        <Checkout />
+      </Suspense>
       <Footer />
     </>
   );

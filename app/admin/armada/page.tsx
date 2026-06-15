@@ -1,57 +1,89 @@
 "use client";
 
-import Image from "next/image";
+import { toast } from "sonner";
+import { Plus, PencilSimple, DotsThreeVertical } from "@phosphor-icons/react";
+import { DataTable, type Column } from "@/components/admin/DataTable";
+import { CarCell } from "@/components/admin/CarCell";
 import { Button } from "@/components/ui/Button";
+import { Badge, categoryColor } from "@/components/ui/Badge";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR } from "@/lib/format";
-import { cars } from "@/lib/mock/cars";
+import { cars, type Car } from "@/lib/mock/cars";
+
+const catLabel: Record<Car["category"], string> = {
+  mpv: "MPV",
+  suv: "SUV",
+  citycar: "City Car",
+  premium: "Premium",
+  ev: "Electric",
+};
 
 export default function AdminFleetPage() {
   const t = useT();
+
+  const columns: Column<Car>[] = [
+    { key: "car", header: t("admin.car"), render: (c) => <CarCell car={c} /> },
+    {
+      key: "category",
+      header: t("admin.navFleet"),
+      hideOnMobile: true,
+      render: (c) => (
+        <Badge tone="neutral" dot={categoryColor[c.category]}>
+          {catLabel[c.category]}
+        </Badge>
+      ),
+    },
+    {
+      key: "rate",
+      header: t("admin.rate"),
+      align: "right",
+      render: (c) => <span className="tnum font-semibold text-[var(--color-ink)]">{formatIDR(c.rateSelfDrive)}</span>,
+    },
+    {
+      key: "status",
+      header: t("admin.actions"),
+      align: "right",
+      render: (c) =>
+        c.available ? (
+          <Badge tone="success">{t("common.available")}</Badge>
+        ) : (
+          <Badge tone="neutral">{t("common.unavailable")}</Badge>
+        ),
+    },
+  ];
+
   return (
-    <>
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <h1 className="text-[32px] font-bold">{t("admin.fleet")}</h1>
-        <Button variant="primary">{t("admin.addCar")}</Button>
-      </div>
-      <div className="border border-[var(--color-hairline)] overflow-x-auto">
-        <table className="w-full text-[14px]">
-          <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
-            <tr>
-              <th className="text-left p-4 label-uppercase">Unit</th>
-              <th className="text-left p-4 label-uppercase">Kategori</th>
-              <th className="text-left p-4 label-uppercase">Tarif</th>
-              <th className="text-left p-4 label-uppercase">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cars.map((c) => (
-              <tr key={c.slug} className="border-t border-[var(--color-hairline)]">
-                <td className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-16 h-12 bg-[var(--color-surface-card)] overflow-hidden flex-shrink-0">
-                      <Image src={c.exterior} alt="" fill sizes="64px" className="object-cover" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-[var(--color-ink)]">{c.name}</div>
-                      <div className="text-[12px] text-[var(--color-muted)]">{c.brand} - {c.color}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-4">{c.category.toUpperCase()}</td>
-                <td className="p-4">{formatIDR(c.rateSelfDrive)}</td>
-                <td className="p-4">
-                  {c.available ? (
-                    <span className="text-[var(--color-success)] font-bold">Tersedia</span>
-                  ) : (
-                    <span className="text-[var(--color-muted)]">Tidak tersedia</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="eyebrow">{t("admin.navFleet")}</span>
+          <h1 className="display-sm">{t("admin.fleetTitle")}</h1>
+        </div>
+        <Button variant="primary" onClick={() => toast(t("admin.addCar"))}>
+          <Plus size={17} weight="bold" />
+          {t("admin.addCar")}
+        </Button>
+      </header>
+
+      <section className="card shadow-sm">
+        <DataTable
+          columns={columns}
+          rows={cars}
+          rowKey={(c) => c.slug}
+          actionsHeader={<DotsThreeVertical size={16} className="ml-auto" />}
+          actions={(c) => (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2.5"
+              onClick={() => toast(c.name, { description: t("common.viewDetails") })}
+              aria-label={t("common.viewDetails")}
+            >
+              <PencilSimple size={16} />
+            </Button>
+          )}
+        />
+      </section>
+    </div>
   );
 }

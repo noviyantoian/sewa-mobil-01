@@ -1,51 +1,66 @@
 /**
- * FolkaDrive design tokens — Webflow-inspired (DESIGN.md).
+ * FolkaDrive design tokens — "Trusted Motion".
+ * Premium automotive editorial: near-black ink + warm white canvas,
+ * one electric cobalt action accent, chromatic accents for category coding only.
  * Single source of truth. Jangan invent token baru di luar file ini.
  */
 
 :root {
-  /* Brand */
+  /* Brand / structure */
   --color-primary: #080808;
   --color-on-primary: #ffffff;
 
-  /* 5-stop chromatic accent (kategori product surface) */
-  --color-accent-purple: #7a3dff;
-  --color-accent-pink: #ed52cb;
-  --color-accent-blue: #3b89ff;
-  --color-accent-blue-deep: #006acc;
-  --color-accent-blue-info: #146ef5;
-  --color-accent-orange: #ff6b00;
-  --color-accent-green: #00d722;
-  --color-accent-yellow: #ffae13;
-  --color-accent-red: #ee1d36;
+  /* Action accent — cobalt (money CTAs, links, focus) */
+  --color-accent: #146ef5;
+  --color-accent-hover: #0b54d0;
+  --color-accent-soft: #eaf1fe;
+  --color-accent-ink: #0a3aa0;
+
+  /* Category chromatic accents (tags only) */
+  --color-cat-mpv: #146ef5;
+  --color-cat-suv: #ff6b00;
+  --color-cat-citycar: #ed52cb;
+  --color-cat-premium: #7a3dff;
+  --color-cat-ev: #00b341;
 
   /* Surface */
   --color-canvas: #ffffff;
-  --color-canvas-soft: #fafafa;
+  --color-canvas-soft: #f7f7f5;
+  --color-canvas-warm: #faf9f6;
+  --color-surface-dark: #0b0d10;
+  --color-surface-dark-soft: #14171c;
 
   /* Hairlines */
-  --color-hairline: #d8d8d8;
+  --color-hairline: #e6e4df;
+  --color-hairline-strong: #d4d2cc;
+  --color-hairline-dark: #2a2e35;
 
   /* Text */
   --color-ink: #080808;
   --color-ink-strong: #222222;
-  --color-body: #363636;
+  --color-body: #3c3c3c;
   --color-body-mid: #5a5a5a;
   --color-mute: #898989;
   --color-mute-soft: #ababab;
+  --color-on-dark: #ffffff;
+  --color-on-dark-soft: #b6bcc6;
 
   /* Semantic */
-  --color-success: #00d722;
-  --color-warning: #ffae13;
-  --color-error: #ee1d36;
+  --color-success: #00b341;
+  --color-success-soft: #e7f8ee;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fef3e2;
+  --color-error: #e0203a;
+  --color-error-soft: #fdecee;
   --color-info: #146ef5;
 
-  /* Radius — soft */
-  --radius-none: 0px;
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Radius — soft, not stiff */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
   --radius-full: 9999px;
 
   /* Spacing — base 4px */
@@ -59,46 +74,48 @@
   --space-3xl: 32px;
   --space-4xl: 48px;
   --space-5xl: 64px;
-  --space-section: 96px;
+  --space-6xl: 96px;
+  --space-section: 112px;
 
-  /* Typography — Inter substitutes WF Visual Sans Variable */
-  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  --font-mono: "Inconsolata", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Typography — Inter */
+  --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
 
-  --text-display-xxl: 80px;
-  --text-display-xl: 56px;
-  --text-display-lg: 44.8px;
-  --text-display-md: 32px;
-  --text-display-sm: 24px;
-  --text-display-xs: 20px;
-  --text-body-lg: 28.8px;
+  --text-display-2xl: 92px;
+  --text-display-xl: 64px;
+  --text-display-lg: 48px;
+  --text-display-md: 36px;
+  --text-display-sm: 28px;
+  --text-display-xs: 22px;
+  --text-body-xl: 22px;
+  --text-body-lg: 19px;
   --text-body-md: 16px;
   --text-body-sm: 14px;
-  --text-caption: 12.8px;
-  --text-eyebrow: 15px;
-  --text-eyebrow-sm: 12px;
-  --text-button: 16px;
+  --text-caption: 13px;
+  --text-eyebrow: 13px;
 
   /* Tracking */
-  --tracking-display-xxl: -0.8px;
-  --tracking-body-md: -0.16px;
-  --tracking-eyebrow: 1.5px;
+  --tracking-display: -0.03em;
+  --tracking-display-tight: -0.04em;
+  --tracking-body: -0.011em;
+  --tracking-eyebrow: 0.14em;
 
   /* Container */
-  --container-max: 1440px;
+  --container-max: 1280px;
+  --container-wide: 1440px;
 
   /* Easing & duration */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 150ms;
-  --duration-normal: 240ms;
+  --duration-normal: 260ms;
+  --duration-slow: 600ms;
 
-  /* Shadow — Webflow Level 2 (layered drop) */
-  --shadow-level-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02);
-  --shadow-level-2: 0 84px 24px rgba(0, 0, 0, 0), 0 54px 22px rgba(0, 0, 0, 0.01),
-    0 30px 18px rgba(0, 0, 0, 0.04), 0 13px 13px rgba(0, 0, 0, 0.08),
-    0 3px 7px rgba(0, 0, 0, 0.09);
-  --shadow-level-3: 0 84px 24px rgba(0, 0, 0, 0), 0 54px 22px rgba(0, 0, 0, 0.02),
-    0 30px 18px rgba(0, 0, 0, 0.06), 0 13px 13px rgba(0, 0, 0, 0.1),
-    0 3px 7px rgba(0, 0, 0, 0.12);
-  --shadow-modal: 0 24px 24px rgba(0, 0, 0, 0.26), 0 6px 13px rgba(0, 0, 0, 0.29);
+  /* Shadow — layered depth (Webflow-style) */
+  --shadow-xs: 0 1px 2px rgba(8, 8, 8, 0.04), 0 1px 1px rgba(8, 8, 8, 0.03);
+  --shadow-sm: 0 2px 4px rgba(8, 8, 8, 0.04), 0 4px 8px rgba(8, 8, 8, 0.04);
+  --shadow-md: 0 8px 16px rgba(8, 8, 8, 0.06), 0 2px 4px rgba(8, 8, 8, 0.04);
+  --shadow-lg: 0 30px 60px -16px rgba(8, 8, 8, 0.18), 0 12px 24px -12px rgba(8, 8, 8, 0.12);
+  --shadow-xl: 0 48px 80px -24px rgba(8, 8, 8, 0.28), 0 18px 36px -18px rgba(8, 8, 8, 0.16);
+  --shadow-accent: 0 12px 28px -8px rgba(20, 110, 245, 0.42);
 }

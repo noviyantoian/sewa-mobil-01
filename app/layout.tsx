@@ -1,26 +1,56 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { getLocale, getMessages } from "@/lib/i18n/getLocale";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organizationSchema, websiteSchema } from "@/lib/seo";
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
   variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "FolkaDrive - Rental mobil profesional",
+  title: {
+    default: "FolkaDrive — Sewa mobil tanpa drama",
+    template: "%s · FolkaDrive",
+  },
   description:
-    "Armada premium di Jakarta, Bandung, dan Bali. Self-drive atau dengan sopir. Booking 2 menit, harga transparan.",
+    "Armada terawat di Jakarta, Bandung & Bali. Lepas kunci atau dengan sopir. Harga transparan tanpa biaya tersembunyi, batal gratis H-2, booking 2 menit.",
   metadataBase: new URL("https://folkadrive.local"),
+  applicationName: "FolkaDrive",
+  authors: [{ name: "FolkaDrive" }],
+  publisher: "FolkaDrive",
+  category: "travel",
+  keywords: [
+    "sewa mobil jakarta",
+    "rental mobil bandung",
+    "sewa mobil bali",
+    "rental mobil lepas kunci",
+    "sewa mobil dengan sopir",
+    "rental mobil murah",
+  ],
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  formatDetection: { telephone: true, email: true, address: true },
   openGraph: {
-    title: "FolkaDrive",
-    description: "Mobil tepercaya, kapan saja.",
+    title: "FolkaDrive — Sewa mobil tanpa drama",
+    description: "Mobil tepercaya, harga jelas, kapan saja.",
     images: ["/images/og-default.webp"],
     type: "website",
+    siteName: "FolkaDrive",
+    locale: "id_ID",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FolkaDrive — Sewa mobil tanpa drama",
+    description: "Mobil tepercaya, harga jelas, kapan saja.",
+    images: ["/images/og-default.webp"],
   },
 };
 
@@ -30,9 +60,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale} className={inter.variable}>
-      <body style={{ fontFamily: "var(--font-inter), var(--font-sans)" }}>
+      <body>
+        <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <I18nProvider locale={locale} messages={messages}>
           {children}
+          <Toaster
+            position="bottom-center"
+            toastOptions={{
+              style: {
+                borderRadius: "10px",
+                border: "1px solid var(--color-hairline)",
+                fontFamily: "var(--font-sans)",
+              },
+            }}
+          />
         </I18nProvider>
       </body>
     </html>
