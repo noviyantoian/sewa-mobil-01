@@ -1,18 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { locales } from "@/lib/i18n/config";
 
 export function LangSwitch() {
-  const router = useRouter();
-  const { locale } = useI18n();
-
-  const setLocale = (next: string) => {
-    if (next === locale) return;
-    document.cookie = `folkadrive_locale=${next}; path=/; max-age=31536000; samesite=lax`;
-    router.refresh();
-  };
+  const { locale, setLocale } = useI18n();
 
   return (
     <div

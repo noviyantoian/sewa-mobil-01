@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
-import { getLocale, getMessages } from "@/lib/i18n/getLocale";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
@@ -54,15 +53,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
-  const messages = await getMessages(locale);
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang="id" className={inter.variable}>
       <body>
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
-        <I18nProvider locale={locale} messages={messages}>
+        <I18nProvider>
           {children}
           <Toaster
             position="bottom-center"
