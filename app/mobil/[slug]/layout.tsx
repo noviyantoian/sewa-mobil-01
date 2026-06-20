@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { breadcrumb, carSchema } from "@/lib/seo";
-import { getCarBySlug } from "@/lib/mock/cars";
 import { formatIDR } from "@/lib/format";
+import { getCarForRequest } from "./_data";
 
 type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const car = getCarBySlug(slug);
+  const car = await getCarForRequest(slug);
 
   if (!car) {
     return {
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function CarLayout({ children, params }: { children: ReactNode } & Params) {
   const { slug } = await params;
-  const car = getCarBySlug(slug);
+  const car = await getCarForRequest(slug);
 
   return (
     <>
