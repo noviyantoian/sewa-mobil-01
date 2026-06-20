@@ -160,6 +160,18 @@ export async function getCarBySlug(
   });
 }
 
+export async function getCarById(
+  tenantId: string,
+  id: string,
+): Promise<UiCar | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [car] = await tx.select().from(cars).where(eq(cars.id, id)).limit(1);
+    if (!car) return null;
+    const imgMap = await imagesByCar(tx, [car.id]);
+    return toUiCar(car, imgMap.get(car.id) ?? []);
+  });
+}
+
 export async function listLocations(tenantId: string): Promise<LocationRow[]> {
   return withTenant(tenantId, (tx) =>
     tx.select().from(locations).orderBy(asc(locations.city), asc(locations.area)),
