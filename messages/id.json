@@ -259,7 +259,9 @@
     "cancelPartial": "Setelah itu potongan 50%",
     "agree": "Saya setuju dengan syarat sewa & kebijakan deposit",
     "placeOrder": "Bayar & konfirmasi",
-    "secure": "Pembayaran aman terenkripsi"
+    "secure": "Pembayaran aman terenkripsi",
+    "errorGeneric": "Gagal membuat booking. Silakan coba lagi.",
+    "errorDoubleBooking": "Mobil sudah dipesan untuk tanggal tersebut. Pilih tanggal lain."
   },
   "confirm": {
     "title": "Booking terkonfirmasi!",

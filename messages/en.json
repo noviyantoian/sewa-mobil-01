@@ -259,7 +259,9 @@
     "cancelPartial": "50% fee afterwards",
     "agree": "I agree to the rental terms & deposit policy",
     "placeOrder": "Pay & confirm",
-    "secure": "Secure encrypted payment"
+    "secure": "Secure encrypted payment",
+    "errorGeneric": "Could not create the booking. Please try again.",
+    "errorDoubleBooking": "This car is already booked for those dates. Pick other dates."
   },
   "confirm": {
     "title": "Booking confirmed!",
