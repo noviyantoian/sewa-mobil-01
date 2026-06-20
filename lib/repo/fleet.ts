@@ -1,5 +1,5 @@
-import { and, asc, eq, gte, type SQL } from "drizzle-orm";
-import { withTenant } from "@/lib/db";
+import { and, asc, eq, gte, inArray, type SQL } from "drizzle-orm";
+import { withTenant, type Tx } from "@/lib/db";
 import {
   carImages,
   cars,
@@ -13,15 +13,85 @@ import {
 export type CarRow = typeof cars.$inferSelect;
 export type LocationRow = typeof locations.$inferSelect;
 export type DriverRow = typeof drivers.$inferSelect;
+export type CarImage = { carId: string; url: string; kind: string; sort: number };
 
-export type CarImage = { url: string; kind: string; sort: number };
-/** A car plus its images, with exterior/side/interior shortcuts (mock-compatible). */
-export type CarWithImages = CarRow & {
-  images: CarImage[];
-  exterior?: string;
-  side?: string;
-  interior?: string;
-};
+/**
+ * UI-facing car: non-null fields + exterior/side/interior image URLs. Shaped to
+ * be a drop-in for the old `lib/mock/cars` `Car` type so view components are
+ * untouched.
+ */
+export interface UiCar {
+  id: string;
+  slug: string;
+  name: string;
+  brand: string;
+  category: CarCategory;
+  color: string;
+  capacity: number;
+  transmission: CarTransmission;
+  fuel: string;
+  year: number;
+  rateSelfDrive: number;
+  rateWithDriver: number;
+  deposit: number;
+  available: boolean;
+  exterior: string;
+  side: string;
+  interior: string;
+  images: { url: string; kind: string; sort: number }[];
+}
+
+const IMAGE_FALLBACK = "/images/placeholder.webp";
+
+function toUiCar(row: CarRow, imgs: CarImage[]): UiCar {
+  const byKind = (k: string) => imgs.find((i) => i.kind === k)?.url;
+  const exterior = byKind("exterior") ?? imgs[0]?.url ?? IMAGE_FALLBACK;
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    brand: row.brand,
+    category: row.category,
+    color: row.color ?? "",
+    capacity: row.capacity,
+    transmission: row.transmission,
+    fuel: row.fuel ?? "",
+    year: row.year ?? 0,
+    rateSelfDrive: row.rateSelfDrive,
+    rateWithDriver: row.rateWithDriver,
+    deposit: row.deposit,
+    available: row.available,
+    exterior,
+    side: byKind("side") ?? exterior,
+    interior: byKind("interior") ?? exterior,
+    images: imgs.map(({ url, kind, sort }) => ({ url, kind, sort })),
+  };
+}
+
+/** One query for all images of the given cars, grouped by car id. */
+async function imagesByCar(
+  tx: Tx,
+  carIds: string[],
+): Promise<Map<string, CarImage[]>> {
+  const map = new Map<string, CarImage[]>();
+  if (carIds.length === 0) return map;
+  const rows = await tx
+    .select({
+      carId: carImages.carId,
+      url: carImages.url,
+      kind: carImages.kind,
+      sort: carImages.sort,
+    })
+    .from(carImages)
+    .where(inArray(carImages.carId, carIds))
+    .orderBy(asc(carImages.sort));
+  for (const im of rows) {
+    const list = map.get(im.carId) ?? [];
+    list.push(im);
+    map.set(im.carId, list);
+  }
+  return map;
+}
 
 export interface CarFilters {
   category?: CarCategory | "all";
@@ -32,21 +102,10 @@ export interface CarFilters {
   mode?: BookingMode;
 }
 
-function withImageShortcuts(car: CarRow, imgs: CarImage[]): CarWithImages {
-  const byKind = (k: string) => imgs.find((i) => i.kind === k)?.url;
-  return {
-    ...car,
-    images: imgs,
-    exterior: byKind("exterior"),
-    side: byKind("side"),
-    interior: byKind("interior"),
-  };
-}
-
 /** Price filter depends on mode (rate column varies) — applied after fetch. */
-function applyPriceFilter(rows: CarRow[], f: CarFilters): CarRow[] {
+function applyPriceFilter(rows: UiCar[], f: CarFilters): UiCar[] {
   if (!f.priceMin && !f.priceMax) return rows;
-  const rateOf = (c: CarRow) =>
+  const rateOf = (c: UiCar) =>
     f.mode === "withDriver" ? c.rateWithDriver : c.rateSelfDrive;
   return rows.filter((c) => {
     const r = rateOf(c);
@@ -59,7 +118,7 @@ function applyPriceFilter(rows: CarRow[], f: CarFilters): CarRow[] {
 export async function listCars(
   tenantId: string,
   filters: CarFilters = {},
-): Promise<CarRow[]> {
+): Promise<UiCar[]> {
   return withTenant(tenantId, async (tx) => {
     const conds: SQL[] = [];
     if (filters.category && filters.category !== "all") {
@@ -76,14 +135,19 @@ export async function listCars(
       .from(cars)
       .where(conds.length ? and(...conds) : undefined)
       .orderBy(asc(cars.rateSelfDrive));
-    return applyPriceFilter(rows, filters);
+    const imgMap = await imagesByCar(
+      tx,
+      rows.map((r) => r.id),
+    );
+    const ui = rows.map((r) => toUiCar(r, imgMap.get(r.id) ?? []));
+    return applyPriceFilter(ui, filters);
   });
 }
 
 export async function getCarBySlug(
   tenantId: string,
   slug: string,
-): Promise<CarWithImages | null> {
+): Promise<UiCar | null> {
   return withTenant(tenantId, async (tx) => {
     const [car] = await tx
       .select()
@@ -91,12 +155,8 @@ export async function getCarBySlug(
       .where(eq(cars.slug, slug))
       .limit(1);
     if (!car) return null;
-    const imgs = await tx
-      .select({ url: carImages.url, kind: carImages.kind, sort: carImages.sort })
-      .from(carImages)
-      .where(eq(carImages.carId, car.id))
-      .orderBy(asc(carImages.sort));
-    return withImageShortcuts(car, imgs);
+    const imgMap = await imagesByCar(tx, [car.id]);
+    return toUiCar(car, imgMap.get(car.id) ?? []);
   });
 }
 
