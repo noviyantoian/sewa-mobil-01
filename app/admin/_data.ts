@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getActiveTenantId } from "@/lib/tenant/current";
 import { listBookings, listCars, listDrivers, type UiCar } from "@/lib/repo";
 import type { AdminBooking, AdminDriver } from "./types";
@@ -12,8 +13,11 @@ export interface AdminData {
   bookings: AdminBooking[];
 }
 
-/** Fetch + assemble everything the admin surfaces need, tenant-scoped. */
-export async function getAdminData(): Promise<AdminData> {
+/**
+ * Fetch + assemble everything the admin surfaces need, tenant-scoped.
+ * `cache()` dedupes the three queries across admin pages within one request.
+ */
+export const getAdminData = cache(async (): Promise<AdminData> => {
   const tenantId = await getActiveTenantId();
   const [bookings, cars, drivers] = await Promise.all([
     listBookings(tenantId),
@@ -52,4 +56,4 @@ export async function getAdminData(): Promise<AdminData> {
   }));
 
   return { cars, drivers: adminDrivers, bookings: adminBookings };
-}
+});

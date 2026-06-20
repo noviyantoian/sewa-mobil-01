@@ -1,4 +1,4 @@
-import { count, desc, eq } from "drizzle-orm";
+import { count, desc, eq, sql } from "drizzle-orm";
 import { withTenant, type Tx } from "@/lib/db";
 import {
   bookings,
@@ -37,7 +37,7 @@ export class DoubleBookingError extends Error {
 
 export async function listBookings(tenantId: string): Promise<BookingRow[]> {
   return withTenant(tenantId, (tx) =>
-    tx.select().from(bookings).orderBy(desc(bookings.createdAt)),
+    tx.select().from(bookings).orderBy(desc(bookings.createdAt)).limit(200),
   );
 }
 
@@ -72,6 +72,12 @@ export async function createBooking(
   input: CreateBookingInput,
 ): Promise<BookingRow> {
   return withTenant(tenantId, async (tx) => {
+    // Serialize concurrent booking creation per tenant so the availability
+    // check + insert are atomic (READ COMMITTED otherwise lets two overlapping
+    // requests both pass). Also prevents duplicate `code` from the count below.
+    // Released automatically at transaction end; pgBouncer-safe (xact-scoped).
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${tenantId}))`);
+
     const available = await isCarAvailable(
       tx,
       input.carId,

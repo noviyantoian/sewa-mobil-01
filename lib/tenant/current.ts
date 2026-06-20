@@ -13,6 +13,10 @@ import { tenants } from "@/lib/db/schema";
  */
 const DEV_TENANT_SLUG = process.env.DEMO_TENANT_SLUG ?? "demo";
 
+// SINGLE-TENANT ONLY. Module-level cache persists across requests in a worker —
+// safe because the demo tenant id never changes. TODO(Fase 1): delete this whole
+// module and resolve host → tenant per request (a stale id here would misroute
+// RLS across tenants).
 let cached: string | undefined;
 
 export async function getActiveTenantId(): Promise<string> {

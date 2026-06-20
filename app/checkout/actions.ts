@@ -63,6 +63,7 @@ export async function createBookingAction(
     return { ok: true, code: booking.code };
   } catch (err) {
     if (err instanceof DoubleBookingError) return { ok: false, error: "double_booking" };
+    console.error("[createBookingAction] booking failed", err);
     return { ok: false, error: "failed" };
   }
 }
