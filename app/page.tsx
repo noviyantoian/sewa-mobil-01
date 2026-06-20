@@ -10,8 +10,15 @@ import { TrustSection } from "@/components/marketing/TrustSection";
 import { Testimonials } from "@/components/marketing/Testimonials";
 import { FAQAccordion } from "@/components/marketing/FAQAccordion";
 import { CTABand } from "@/components/marketing/CTABand";
+import { getActiveTenantId } from "@/lib/tenant/current";
+import { listCars } from "@/lib/repo";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const tenantId = await getActiveTenantId();
+  const featured = (await listCars(tenantId)).filter((c) => c.available).slice(0, 6);
+
   return (
     <>
       <Header />
@@ -19,7 +26,7 @@ export default function HomePage() {
         <Hero />
         <LogoStrip />
         <Categories />
-        <FeaturedCars />
+        <FeaturedCars cars={featured} />
         <HowItWorks />
         <ModeCompare />
         <TrustSection />

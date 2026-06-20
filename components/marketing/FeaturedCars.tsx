@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n/I18nProvider";
-import { cars } from "@/lib/mock/cars";
+import type { UiCar } from "@/lib/repo";
 import { CarCard } from "@/components/booking/CarCard";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 
-const featured = cars.filter((c) => c.available).slice(0, 6);
-
-export function FeaturedCars() {
+export function FeaturedCars({ cars }: { cars: UiCar[] }) {
   const t = useT();
 
   return (
@@ -31,7 +29,7 @@ export function FeaturedCars() {
         </Reveal>
 
         <div className="rail mt-10 sm:mt-12 sm:grid sm:grid-cols-2 sm:gap-5 sm:mx-0 sm:px-0 sm:overflow-visible lg:grid-cols-3">
-          {featured.map((car, i) => (
+          {cars.map((car, i) => (
             <Reveal key={car.slug} delay={((i % 3) + 1) as 1 | 2 | 3} className="min-w-[80%] sm:min-w-0">
               <CarCard car={car} />
             </Reveal>
