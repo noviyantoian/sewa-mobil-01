@@ -339,6 +339,13 @@
     "actions": "Actions",
     "rate": "Rate/day",
     "live": "Demo mode · sample data",
+    "loginTitle": "Admin sign in",
+    "loginSubtitle": "Manage fleet, orders, and verification.",
+    "loginEmail": "Email",
+    "loginPassword": "Password",
+    "loginButton": "Sign in",
+    "loginError": "Wrong email or password.",
+    "logout": "Sign out",
     "exp": "yrs experience"
   },
   "howPage": {

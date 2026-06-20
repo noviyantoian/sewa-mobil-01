@@ -339,6 +339,13 @@
     "actions": "Aksi",
     "rate": "Tarif/hari",
     "live": "Mode demo · data contoh",
+    "loginTitle": "Masuk Admin",
+    "loginSubtitle": "Kelola armada, order, dan verifikasi.",
+    "loginEmail": "Email",
+    "loginPassword": "Kata sandi",
+    "loginButton": "Masuk",
+    "loginError": "Email atau kata sandi salah.",
+    "logout": "Keluar",
     "exp": "thn pengalaman"
   },
   "howPage": {
