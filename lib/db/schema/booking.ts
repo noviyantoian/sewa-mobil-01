@@ -8,7 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createdAt, pk } from "./_shared";
 import { tenants } from "./tenancy";
-import { cars, drivers, locations } from "./fleet";
+import { carUnits, cars, drivers, locations } from "./fleet";
 import { users } from "./auth";
 
 export type BookingMode = "selfDrive" | "withDriver";
@@ -39,6 +39,8 @@ export const bookings = pgTable(
       .references(() => tenants.id, { onDelete: "cascade" }),
     code: text("code").notNull(),
     carId: uuid("car_id").references(() => cars.id),
+    /** Specific physical unit (plate) assigned by admin. Null until assigned. */
+    carUnitId: uuid("car_unit_id").references(() => carUnits.id),
     userId: uuid("user_id").references(() => users.id),
     driverId: uuid("driver_id").references(() => drivers.id),
     customerName: text("customer_name"),

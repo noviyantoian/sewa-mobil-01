@@ -9,15 +9,20 @@ import {
   SteeringWheel,
   Key,
   ArrowSquareOut,
+  WhatsappLogo,
 } from "@phosphor-icons/react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Input";
 import { useT } from "@/lib/i18n/I18nProvider";
-import { formatIDR, formatDateRange } from "@/lib/format";
+import { formatIDR, formatDateRange, waLink } from "@/lib/format";
 import type { BookingStatus } from "@/lib/db/schema";
 import type { BookingDetailVM } from "../../types";
-import { updateBookingStatusAction, verifyDocumentAction } from "../actions";
+import {
+  updateBookingStatusAction,
+  verifyDocumentAction,
+  assignUnitAction,
+} from "../actions";
 import { assignDriverAction } from "../../sopir/actions";
 
 const STATUSES: BookingStatus[] = [
@@ -104,6 +109,16 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
           <Row label={t("admin.bkCreatedAt")}>
             <span className="tnum">{vm.createdAt.slice(0, 10)}</span>
           </Row>
+          {vm.customerPhone && (
+            <a
+              href={waLink(vm.customerPhone, `${t("admin.waVerifyMsg")} ${vm.code}`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 bg-[#25d366] px-4 text-[14px] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25d366] focus-visible:ring-offset-2"
+            >
+              <WhatsappLogo size={18} weight="fill" /> {t("admin.waVerify")}
+            </a>
+          )}
         </Card>
 
         <Card title={t("admin.car")}>
@@ -180,6 +195,27 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
             ))}
           </Select>
         </Card>
+
+        {vm.units.length > 0 && (
+          <Card title={t("admin.bkUnit")}>
+            <Select
+              value={vm.carUnitId ?? ""}
+              disabled={busy}
+              onChange={(e) => run(() => assignUnitAction(vm.bookingId, e.target.value))}
+              aria-label={t("admin.bkUnit")}
+            >
+              <option value="">{t("admin.bkNoUnit")}</option>
+              {vm.units.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.plate}
+                  {u.label ? ` · ${u.label}` : ""}
+                  {u.running && u.id !== vm.carUnitId ? ` — ${t("admin.unitRunning")}` : ""}
+                </option>
+              ))}
+            </Select>
+            <p className="mt-2 text-[12px] text-[var(--color-mute)]">{t("admin.bkUnitHint")}</p>
+          </Card>
+        )}
       </div>
 
       <Card title={t("admin.bkDocuments")}>

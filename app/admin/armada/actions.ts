@@ -4,7 +4,14 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/guard";
 import { getActiveTenantId } from "@/lib/tenant/current";
-import { createCar, updateCar, deleteCar } from "@/lib/repo";
+import {
+  createCar,
+  updateCar,
+  deleteCar,
+  createUnit,
+  updateUnit,
+  deleteUnit,
+} from "@/lib/repo";
 
 // Allow local /images/* (seed) or our own storage origins (Supabase / R2).
 // Blocks javascript:/data: and arbitrary external URLs.
@@ -128,6 +135,74 @@ export async function deleteCarAction(id: string): Promise<CarActionResult> {
   } catch (e) {
     if (pgCode(e) === "23503") return { ok: false, error: "car_in_use" };
     console.error("[deleteCarAction]", e);
+    return { ok: false, error: "failed" };
+  }
+}
+
+// ── Physical units (plates) per car ────────────────────────────────────────
+
+const unitSchema = z.object({
+  plate: z.string().min(1).max(20),
+  label: z.string().max(60).optional(),
+  status: z.enum(["available", "maintenance"]).optional(),
+});
+
+function revalidateFleet(): void {
+  for (const p of ["/admin/armada", "/admin"]) revalidatePath(p);
+}
+
+export async function createUnitAction(
+  carId: string,
+  raw: unknown,
+): Promise<CarActionResult> {
+  try {
+    await requireAdmin();
+    if (!idSchema.safeParse(carId).success) return { ok: false, error: "invalid" };
+    const parsed = unitSchema.safeParse(raw);
+    if (!parsed.success) return { ok: false, error: "invalid" };
+    const tenantId = await getActiveTenantId();
+    await createUnit(tenantId, carId, parsed.data);
+    revalidateFleet();
+    return { ok: true };
+  } catch (e) {
+    if (pgCode(e) === "23505") return { ok: false, error: "plate_taken" };
+    console.error("[createUnitAction]", e);
+    return { ok: false, error: "failed" };
+  }
+}
+
+export async function updateUnitAction(
+  id: string,
+  raw: unknown,
+): Promise<CarActionResult> {
+  try {
+    await requireAdmin();
+    if (!idSchema.safeParse(id).success) return { ok: false, error: "invalid" };
+    const parsed = unitSchema.safeParse(raw);
+    if (!parsed.success) return { ok: false, error: "invalid" };
+    const tenantId = await getActiveTenantId();
+    const row = await updateUnit(tenantId, id, parsed.data);
+    if (!row) return { ok: false, error: "not_found" };
+    revalidateFleet();
+    return { ok: true };
+  } catch (e) {
+    if (pgCode(e) === "23505") return { ok: false, error: "plate_taken" };
+    console.error("[updateUnitAction]", e);
+    return { ok: false, error: "failed" };
+  }
+}
+
+export async function deleteUnitAction(id: string): Promise<CarActionResult> {
+  try {
+    await requireAdmin();
+    if (!idSchema.safeParse(id).success) return { ok: false, error: "invalid" };
+    const tenantId = await getActiveTenantId();
+    await deleteUnit(tenantId, id);
+    revalidateFleet();
+    return { ok: true };
+  } catch (e) {
+    if (pgCode(e) === "23503") return { ok: false, error: "unit_in_use" };
+    console.error("[deleteUnitAction]", e);
     return { ok: false, error: "failed" };
   }
 }

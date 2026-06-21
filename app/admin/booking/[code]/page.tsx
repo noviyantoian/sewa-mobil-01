@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getActiveTenantId } from "@/lib/tenant/current";
-import { getBookingDetail, listDrivers } from "@/lib/repo";
+import { getBookingDetail, listDrivers, listUnitsByCar } from "@/lib/repo";
 import type { BookingDetailVM } from "../../types";
 import { BookingDetail } from "./BookingDetail";
 
@@ -23,6 +23,10 @@ export default async function BookingDetailPage({
   if (!detail) notFound();
 
   const { booking: b } = detail;
+  // Units of this car the admin can assign as the physical plate that goes out.
+  const units = detail.car
+    ? await listUnitsByCar(tenantId, detail.car.id)
+    : [];
   const vm: BookingDetailVM = {
     code: b.code,
     bookingId: b.id,
@@ -38,6 +42,13 @@ export default async function BookingDetailPage({
     deposit: b.deposit,
     car: detail.car,
     driverId: b.driverId,
+    carUnitId: b.carUnitId ?? null,
+    units: units.map((u) => ({
+      id: u.id,
+      plate: u.plate,
+      label: u.label,
+      running: u.running,
+    })),
     pickup: loc(detail.pickup),
     ret: loc(detail.ret),
     pickupAddress: b.pickupAddress ?? null,

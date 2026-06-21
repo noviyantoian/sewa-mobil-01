@@ -37,3 +37,28 @@ export function daysBetween(start: Date | string, end: Date | string): number {
 export function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
 }
+
+/**
+ * Normalize an Indonesian phone number to wa.me's expected international form
+ * (digits only, leading `62`). Handles `08xx`, `+62 8xx`, `62 8xx`, spaces and
+ * dashes. Returns "" when there is nothing dial-able.
+ */
+export function normalizePhoneID(phone: string): string {
+  const digits = phone.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("62")) return digits;
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+}
+
+/**
+ * Build a wa.me deep link for contacting a customer, with an optional prefilled
+ * message. Returns "" when the phone can't be normalized (caller hides the CTA).
+ */
+export function waLink(phone: string, text?: string): string {
+  const num = normalizePhoneID(phone);
+  if (!num) return "";
+  const query = text ? `?text=${encodeURIComponent(text)}` : "";
+  return `https://wa.me/${num}${query}`;
+}

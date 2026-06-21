@@ -4,14 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, PencilSimple, Trash, DotsThreeVertical } from "@phosphor-icons/react";
+import {
+  Plus,
+  PencilSimple,
+  Trash,
+  DotsThreeVertical,
+  CaretDown,
+} from "@phosphor-icons/react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { CarCell } from "@/components/admin/CarCell";
 import { Button } from "@/components/ui/Button";
 import { Badge, categoryColor } from "@/components/ui/Badge";
 import { useT } from "@/lib/i18n/I18nProvider";
-import { formatIDR } from "@/lib/format";
+import { formatIDR, cn } from "@/lib/format";
 import type { UiCar } from "@/lib/repo";
+import type { AdminUnit } from "../types";
 import { deleteCarAction } from "./actions";
 
 const catLabel: Record<UiCar["category"], string> = {
@@ -22,11 +29,32 @@ const catLabel: Record<UiCar["category"], string> = {
   ev: "Electric",
 };
 
-export function ArmadaClient({ cars }: { cars: UiCar[] }) {
+export function ArmadaClient({
+  cars,
+  units,
+}: {
+  cars: UiCar[];
+  units: AdminUnit[];
+}) {
   const t = useT();
   const router = useRouter();
   const [deleting, setDeleting] = useState<UiCar | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const unitsByCar = new Map<string, AdminUnit[]>();
+  for (const u of units) {
+    const list = unitsByCar.get(u.carId) ?? [];
+    unitsByCar.set(u.carId, [...list, u]);
+  }
+
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const openCreate = () => router.push("/admin/armada/baru");
   const openEdit = (c: UiCar) => router.push(`/admin/armada/${c.id}`);
@@ -58,6 +86,38 @@ export function ArmadaClient({ cars }: { cars: UiCar[] }) {
           {catLabel[c.category]}
         </Badge>
       ),
+    },
+    {
+      key: "units",
+      header: t("admin.unitsTitle"),
+      hideOnMobile: true,
+      render: (c) => {
+        const list = unitsByCar.get(c.id) ?? [];
+        if (list.length === 0)
+          return <span className="text-[var(--color-mute)]">—</span>;
+        const running = list.filter((u) => u.running).length;
+        const open = expanded.has(c.id);
+        return (
+          <button
+            type="button"
+            onClick={() => toggleExpand(c.id)}
+            aria-expanded={open}
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--color-ink)] transition-colors hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          >
+            <span className="tnum">{list.length} {t("admin.unitsCount")}</span>
+            {running > 0 && (
+              <span className="tnum text-[var(--color-warning)]">
+                · {running} {t("admin.unitRunning")}
+              </span>
+            )}
+            <CaretDown
+              size={13}
+              weight="bold"
+              className={cn("transition-transform", open && "rotate-180")}
+            />
+          </button>
+        );
+      },
     },
     {
       key: "rate",
@@ -121,6 +181,55 @@ export function ArmadaClient({ cars }: { cars: UiCar[] }) {
           )}
         />
       </section>
+
+      {[...expanded]
+        .map((id) => cars.find((c) => c.id === id))
+        .filter((c): c is UiCar => !!c)
+        .map((c) => {
+          const list = unitsByCar.get(c.id) ?? [];
+          return (
+            <section key={c.id} className="card shadow-sm p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-[15px] font-bold tracking-[-0.01em] text-[var(--color-ink)]">
+                  {c.brand} {c.name}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => openEdit(c)}
+                  className="text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--color-primary)] hover:underline"
+                >
+                  {t("admin.unitsManage")}
+                </button>
+              </div>
+              <ul className="flex flex-col">
+                {list.map((u) => (
+                  <li
+                    key={u.id}
+                    className="flex flex-wrap items-center gap-3 border-t border-[var(--color-hairline)] py-2.5 first:border-t-0 first:pt-0"
+                  >
+                    <span className="tnum w-32 font-bold text-[var(--color-ink)]">{u.plate}</span>
+                    <span className="flex-1 text-[13px] text-[var(--color-body)]">
+                      {u.label || <span className="text-[var(--color-mute)]">—</span>}
+                      {u.running && u.booking && (
+                        <span className="ml-2 text-[12px] text-[var(--color-mute)]">
+                          · {u.booking.customerName ?? "—"}
+                          {u.booking.driverName ? ` · ${u.booking.driverName}` : ""}
+                        </span>
+                      )}
+                    </span>
+                    {u.running ? (
+                      <Badge tone="warning">{t("admin.unitRunning")}</Badge>
+                    ) : u.status === "maintenance" ? (
+                      <Badge tone="neutral">{t("admin.unitMaintenance")}</Badge>
+                    ) : (
+                      <Badge tone="success">{t("admin.unitAvailable")}</Badge>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
 
       <Dialog.Root open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <Dialog.Portal>

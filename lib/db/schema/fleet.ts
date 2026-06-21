@@ -17,6 +17,8 @@ export type CarTransmission = "auto" | "manual";
 export type CarImageKind = "exterior" | "side" | "interior" | "gallery";
 export type LocationType = "office" | "airport" | "hotel" | "other";
 export type DriverStatus = "idle" | "assigned" | "off";
+/** Manual unit state. "out/running" is derived from bookings, never stored here. */
+export type CarUnitStatus = "available" | "maintenance";
 
 /** Rental fleet. Mirrors lib/mock/cars.ts; rates/deposit in IDR (integer). */
 export const cars = pgTable(
@@ -84,6 +86,25 @@ export const locations = pgTable("locations", {
   city: text("city").notNull(),
   area: text("area").notNull(),
   type: text("type").$type<LocationType>().notNull().default("office"),
+});
+
+/**
+ * Per-unit plate registry. A car model is an inventory of N physical units, each
+ * with a distinct plate (nomor polisi). Admin ties a booking to a specific unit
+ * to track which car went out with which driver. Optional — cars work without it.
+ */
+export const carUnits = pgTable("car_units", {
+  id: pk(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  carId: uuid("car_id")
+    .notNull()
+    .references(() => cars.id, { onDelete: "cascade" }),
+  plate: text("plate").notNull(),
+  label: text("label"),
+  status: text("status").$type<CarUnitStatus>().notNull().default("available"),
+  createdAt: createdAt(),
 });
 
 /** Drivers for with-driver mode. Mirrors lib/mock/drivers.ts. */

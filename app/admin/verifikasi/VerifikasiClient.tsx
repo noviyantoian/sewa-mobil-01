@@ -1,43 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
-import { toast } from "sonner";
-import { ShieldCheck, IdentificationCard, Phone, SealCheck } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/Button";
+import {
+  ShieldCheck,
+  IdentificationCard,
+  Phone,
+  SealCheck,
+  WhatsappLogo,
+  CaretRight,
+} from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/Badge";
 import { CarCell } from "@/components/admin/CarCell";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { asset } from "@/lib/asset";
+import { waLink } from "@/lib/format";
 import type { AdminBooking } from "../types";
-import { updateBookingStatusAction } from "../booking/actions";
 
 const DOC_IMAGE = asset("/images/trust-verifikasi.webp");
 
 export function VerifikasiClient({ bookings }: { bookings: AdminBooking[] }) {
   const t = useT();
-  const [queue, setQueue] = useState<AdminBooking[]>(() =>
-    bookings.filter((b) => b.status === "pending")
-  );
-
-  const router = useRouter();
-
-  const resolve = async (b: AdminBooking, approved: boolean) => {
-    const res = await updateBookingStatusAction(
-      b.bookingId,
-      approved ? "confirmed" : "cancelled",
-    );
-    if (res.ok) {
-      setQueue((q) => q.filter((x) => x.id !== b.id));
-      toast.success(approved ? t("admin.approve") : t("admin.reject"), {
-        description: `${b.id} · ${b.customerName}`,
-      });
-      router.refresh();
-    } else {
-      toast.error(t("admin.errFailed"));
-    }
-  };
+  // Read-only queue. Verification is decided manually on the booking detail
+  // page (after reviewing docs) — never a one-tap approve/reject from here.
+  const queue = bookings.filter((b) => b.status === "pending");
 
   return (
     <div className="flex flex-col gap-7">
@@ -94,13 +80,23 @@ export function VerifikasiClient({ bookings }: { bookings: AdminBooking[] }) {
                   <CarCell car={b.car ?? undefined} />
                 </div>
 
-                <div className="flex gap-2">
-                  <Button variant="primary" size="sm" className="flex-1" onClick={() => resolve(b, true)}>
-                    <SealCheck size={16} weight="bold" /> {t("admin.approve")}
-                  </Button>
-                  <Button variant="secondary" size="sm" className="flex-1" onClick={() => resolve(b, false)}>
-                    {t("admin.reject")}
-                  </Button>
+                <div className="flex flex-col gap-2">
+                  {b.customerPhone && (
+                    <a
+                      href={waLink(b.customerPhone, `${t("admin.waVerifyMsg")} ${b.id}`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-11 items-center justify-center gap-2 bg-[#25d366] px-4 text-[14px] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25d366] focus-visible:ring-offset-2"
+                    >
+                      <WhatsappLogo size={18} weight="fill" /> {t("admin.waVerify")}
+                    </a>
+                  )}
+                  <Link
+                    href={`/admin/booking/${b.bookingId}`}
+                    className="inline-flex h-11 items-center justify-center gap-1.5 border border-[var(--color-hairline-strong)] px-4 text-[14px] font-bold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-canvas-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
+                  >
+                    {t("admin.verifyManual")} <CaretRight size={16} weight="bold" />
+                  </Link>
                 </div>
               </div>
             </article>

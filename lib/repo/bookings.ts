@@ -101,6 +101,25 @@ export async function assignDriver(
   });
 }
 
+/**
+ * Tie a booking to a specific physical unit (plate), or clear it with `null`.
+ * Lets admin track which exact car went out with which driver.
+ */
+export async function assignUnit(
+  tenantId: string,
+  bookingId: string,
+  carUnitId: string | null,
+): Promise<BookingRow | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [row] = await tx
+      .update(bookings)
+      .set({ carUnitId })
+      .where(eq(bookings.id, bookingId))
+      .returning();
+    return row ?? null;
+  });
+}
+
 export async function getBookingByCode(
   tenantId: string,
   code: string,

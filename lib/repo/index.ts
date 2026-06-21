@@ -4,5 +4,6 @@
  * `tenantId` (from `lib/tenant/current.ts`) as its first argument.
  */
 export * from "./fleet"; // listCars, getCarBySlug, listLocations, listDrivers
-export * from "./bookings"; // listBookings, getBookingByCode, createBooking, DoubleBookingError
+export * from "./units"; // listUnitViews, listUnitsByCar, createUnit, updateUnit, deleteUnit
+export * from "./bookings"; // listBookings, getBookingByCode, createBooking, assignUnit, DoubleBookingError
 export * from "./tenant"; // updateTenantSettings

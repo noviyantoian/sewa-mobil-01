@@ -10,6 +10,7 @@ import {
   getCarById,
   createBooking,
   getAvailableUnits,
+  assignUnit,
   DoubleBookingError,
   DriverRequiredError,
 } from "@/lib/repo";
@@ -102,6 +103,33 @@ export async function verifyDocumentAction(
     return { ok: true };
   } catch (e) {
     console.error("[verifyDocumentAction]", e);
+    return { ok: false, error: "failed" };
+  }
+}
+
+/**
+ * Assign (or clear) the physical unit (plate) that goes out for this booking.
+ * Empty string clears it. The unit's running/available state is derived from
+ * the booking ledger, so no extra status write is needed.
+ */
+export async function assignUnitAction(
+  bookingId: string,
+  carUnitId: string,
+): Promise<BookingActionResult> {
+  try {
+    await requireAdmin();
+    if (!idSchema.safeParse(bookingId).success) return { ok: false, error: "invalid" };
+    const unitId = carUnitId.trim();
+    if (unitId && !idSchema.safeParse(unitId).success) return { ok: false, error: "invalid" };
+    const tenantId = await getActiveTenantId();
+    const row = await assignUnit(tenantId, bookingId, unitId || null);
+    if (!row) return { ok: false, error: "not_found" };
+    for (const p of ["/admin/booking", "/admin", "/admin/armada"]) {
+      revalidatePath(p);
+    }
+    return { ok: true };
+  } catch (e) {
+    console.error("[assignUnitAction]", e);
     return { ok: false, error: "failed" };
   }
 }
