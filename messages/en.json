@@ -392,6 +392,17 @@
     "imgUploading": "Uploading…",
     "imgError": "Upload failed. Max 5MB, JPG/PNG/WebP.",
     "imgRemove": "Remove photo",
+    "carInfoSection": "Information",
+    "carSpecsSection": "Specs",
+    "carRatesSection": "Rates & deposit",
+    "carPhotosSection": "Photos",
+    "carStatusSection": "Status",
+    "fFeatures": "Features",
+    "fFeaturesAdd": "Add feature (e.g. AC)",
+    "fDoors": "Doors",
+    "fLuggage": "Luggage",
+    "fPlate": "License plate (internal)",
+    "backToFleet": "Fleet",
     "exp": "yrs experience"
   },
   "howPage": {

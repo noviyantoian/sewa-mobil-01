@@ -35,6 +35,9 @@ export interface UiCar {
   rateWithDriver: number;
   deposit: number;
   available: boolean;
+  features: string[];
+  doors: number | null;
+  luggage: number | null;
   exterior: string;
   side: string;
   interior: string;
@@ -61,6 +64,9 @@ function toUiCar(row: CarRow, imgs: CarImage[]): UiCar {
     rateWithDriver: row.rateWithDriver,
     deposit: row.deposit,
     available: row.available,
+    features: row.features ?? [],
+    doors: row.doors,
+    luggage: row.luggage,
     exterior,
     side: byKind("side") ?? exterior,
     interior: byKind("interior") ?? exterior,
@@ -172,6 +178,19 @@ export async function getCarById(
   });
 }
 
+/** Raw car row + images for the admin edit form (includes internal `plate`). */
+export async function getCarForEdit(
+  tenantId: string,
+  id: string,
+): Promise<{ car: CarRow; images: CarImage[] } | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [car] = await tx.select().from(cars).where(eq(cars.id, id)).limit(1);
+    if (!car) return null;
+    const imgMap = await imagesByCar(tx, [car.id]);
+    return { car, images: imgMap.get(car.id) ?? [] };
+  });
+}
+
 export async function listLocations(tenantId: string): Promise<LocationRow[]> {
   return withTenant(tenantId, (tx) =>
     tx.select().from(locations).orderBy(asc(locations.city), asc(locations.area)),
@@ -206,6 +225,10 @@ export interface CarInput {
   rateWithDriver: number;
   deposit: number;
   available: boolean;
+  features?: string[];
+  doors?: number | null;
+  luggage?: number | null;
+  plate?: string;
   images?: CarImageInput;
 }
 
@@ -240,6 +263,10 @@ function carColumns(input: CarInput) {
     rateWithDriver: input.rateWithDriver,
     deposit: input.deposit,
     available: input.available,
+    features: input.features ?? [],
+    doors: input.doors ?? null,
+    luggage: input.luggage ?? null,
+    plate: input.plate?.trim() || null,
   };
 }
 

@@ -12,7 +12,6 @@ import { Badge, categoryColor } from "@/components/ui/Badge";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR } from "@/lib/format";
 import type { UiCar } from "@/lib/repo";
-import { CarFormDialog } from "./CarFormDialog";
 import { deleteCarAction } from "./actions";
 
 const catLabel: Record<UiCar["category"], string> = {
@@ -26,19 +25,11 @@ const catLabel: Record<UiCar["category"], string> = {
 export function ArmadaClient({ cars }: { cars: UiCar[] }) {
   const t = useT();
   const router = useRouter();
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<UiCar | null>(null);
   const [deleting, setDeleting] = useState<UiCar | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const openCreate = () => {
-    setEditing(null);
-    setFormOpen(true);
-  };
-  const openEdit = (c: UiCar) => {
-    setEditing(c);
-    setFormOpen(true);
-  };
+  const openCreate = () => router.push("/admin/armada/baru");
+  const openEdit = (c: UiCar) => router.push(`/admin/armada/${c.id}`);
 
   const confirmDelete = async () => {
     if (!deleting) return;
@@ -130,15 +121,6 @@ export function ArmadaClient({ cars }: { cars: UiCar[] }) {
           )}
         />
       </section>
-
-      {formOpen && (
-        <CarFormDialog
-          key={editing?.id ?? "new"}
-          open={formOpen}
-          car={editing}
-          onClose={() => setFormOpen(false)}
-        />
-      )}
 
       <Dialog.Root open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <Dialog.Portal>

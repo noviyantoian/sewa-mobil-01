@@ -1,12 +1,14 @@
 import {
   boolean,
   integer,
+  jsonb,
   numeric,
   pgTable,
   text,
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createdAt, pk } from "./_shared";
 import { tenants } from "./tenancy";
 
@@ -40,6 +42,10 @@ export const cars = pgTable(
     rateWithDriver: integer("rate_with_driver").notNull().default(0),
     deposit: integer("deposit").notNull().default(0),
     available: boolean("available").notNull().default(true),
+    features: jsonb("features").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    doors: integer("doors"),
+    luggage: integer("luggage"),
+    plate: text("plate"),
     createdAt: createdAt(),
   },
   (t) => [unique("cars_tenant_slug_uq").on(t.tenantId, t.slug)],

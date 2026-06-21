@@ -392,6 +392,17 @@
     "imgUploading": "Mengunggah…",
     "imgError": "Gagal unggah. Maks 5MB, format JPG/PNG/WebP.",
     "imgRemove": "Hapus foto",
+    "carInfoSection": "Informasi",
+    "carSpecsSection": "Spesifikasi",
+    "carRatesSection": "Tarif & deposit",
+    "carPhotosSection": "Foto",
+    "carStatusSection": "Status",
+    "fFeatures": "Fitur",
+    "fFeaturesAdd": "Tambah fitur (mis. AC)",
+    "fDoors": "Pintu",
+    "fLuggage": "Bagasi",
+    "fPlate": "Nomor polisi (internal)",
+    "backToFleet": "Armada",
     "exp": "thn pengalaman"
   },
   "howPage": {
