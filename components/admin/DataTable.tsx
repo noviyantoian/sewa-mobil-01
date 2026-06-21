@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { cn } from "@/lib/format";
 
 export type Column<T> = {
@@ -26,6 +26,8 @@ export function DataTable<T>({
   actionsHeader,
   onRowClick,
   empty,
+  expandedContent,
+  isRowExpanded,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -34,7 +36,11 @@ export function DataTable<T>({
   actionsHeader?: ReactNode;
   onRowClick?: (row: T) => void;
   empty?: ReactNode;
+  /** Full-width sub-row rendered under a row when `isRowExpanded(row)` is true. */
+  expandedContent?: (row: T) => ReactNode;
+  isRowExpanded?: (row: T) => boolean;
 }) {
+  const totalCols = columns.length + (actions ? 1 : 0);
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-[14px]">
@@ -68,35 +74,48 @@ export function DataTable<T>({
               </td>
             </tr>
           )}
-          {rows.map((row) => (
-            <tr
-              key={rowKey(row)}
-              onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={cn(
-                "border-b border-[var(--color-hairline)] transition-colors duration-150 last:border-0",
-                onRowClick && "cursor-pointer hover:bg-[var(--color-canvas-soft)]"
-              )}
-            >
-              {columns.map((c) => (
-                <td
-                  key={c.key}
+          {rows.map((row) => {
+            const expanded = isRowExpanded?.(row) ?? false;
+            return (
+              <Fragment key={rowKey(row)}>
+                <tr
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={cn(
-                    "px-4 py-3.5 align-middle text-[var(--color-body)]",
-                    alignClass[c.align ?? "left"],
-                    c.hideOnMobile && "hidden md:table-cell",
-                    c.className
+                    "border-b border-[var(--color-hairline)] transition-colors duration-150",
+                    expanded && "border-b-0",
+                    !expanded && "last:border-0",
+                    onRowClick && "cursor-pointer hover:bg-[var(--color-canvas-soft)]"
                   )}
                 >
-                  {c.render(row)}
-                </td>
-              ))}
-              {actions && (
-                <td className="px-4 py-3.5 text-right align-middle" onClick={(e) => e.stopPropagation()}>
-                  {actions(row)}
-                </td>
-              )}
-            </tr>
-          ))}
+                  {columns.map((c) => (
+                    <td
+                      key={c.key}
+                      className={cn(
+                        "px-4 py-3.5 align-middle text-[var(--color-body)]",
+                        alignClass[c.align ?? "left"],
+                        c.hideOnMobile && "hidden md:table-cell",
+                        c.className
+                      )}
+                    >
+                      {c.render(row)}
+                    </td>
+                  ))}
+                  {actions && (
+                    <td className="px-4 py-3.5 text-right align-middle" onClick={(e) => e.stopPropagation()}>
+                      {actions(row)}
+                    </td>
+                  )}
+                </tr>
+                {expanded && expandedContent && (
+                  <tr className="border-b border-[var(--color-hairline)] last:border-0">
+                    <td colSpan={totalCols} className="bg-[var(--color-canvas-soft)] px-4 pb-4 pt-0 align-top">
+                      {expandedContent(row)}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>

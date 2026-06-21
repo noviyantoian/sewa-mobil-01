@@ -351,17 +351,9 @@ export function CarForm({
               </span>
             </label>
             {f.trackUnits && (
-              <div className="mt-4 max-w-[200px]">
-                <Field label={t("admin.fUnitCount")} htmlFor="unitCount">
-                  <Input
-                    id="unitCount"
-                    type="number"
-                    min={1}
-                    value={f.unitCount}
-                    onChange={text("unitCount")}
-                  />
-                </Field>
-              </div>
+              <p className="mt-3 text-[12px] text-[var(--color-mute)]">
+                {t("admin.fUnitsAuto")}
+              </p>
             )}
           </div>
         </div>

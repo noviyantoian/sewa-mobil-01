@@ -76,6 +76,21 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
     }
   };
 
+  // Manual verification: toast the outcome AND who approved (audit trail).
+  const verifyDoc = async (docId: string, status: "approved" | "rejected") => {
+    setBusy(true);
+    const res = await verifyDocumentAction(docId, status);
+    setBusy(false);
+    if (res.ok) {
+      const label =
+        status === "approved" ? t("admin.bkApproved") : t("admin.bkRejected");
+      toast.success(res.by ? `${label} · ${res.by}` : label);
+      router.refresh();
+    } else {
+      toast.error(t("admin.errFailed"));
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -228,26 +243,34 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
                 key={d.id}
                 className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-hairline)] pt-3 first:border-t-0 first:pt-0"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-[14px] font-semibold uppercase text-[var(--color-ink)]">{d.type}</span>
-                  <a
-                    href={d.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--color-accent)] hover:underline"
-                  >
-                    {t("admin.bkView")} <ArrowSquareOut size={13} />
-                  </a>
-                  <span className={`text-[12px] font-semibold uppercase ${verifyColor[d.verifyStatus] ?? "text-[var(--color-mute)]"}`}>
-                    {d.verifyStatus}
-                  </span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[14px] font-semibold uppercase text-[var(--color-ink)]">{d.type}</span>
+                    <a
+                      href={d.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--color-accent)] hover:underline"
+                    >
+                      {t("admin.bkView")} <ArrowSquareOut size={13} />
+                    </a>
+                    <span className={`text-[12px] font-semibold uppercase ${verifyColor[d.verifyStatus] ?? "text-[var(--color-mute)]"}`}>
+                      {d.verifyStatus}
+                    </span>
+                  </div>
+                  {d.verifiedBy && (
+                    <span className="text-[12px] text-[var(--color-mute)]">
+                      {t("admin.verifiedBy")} {d.verifiedBy}
+                      {d.verifiedAt ? ` · ${d.verifiedAt.slice(0, 10)}` : ""}
+                    </span>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="secondary"
                     size="sm"
                     disabled={busy || d.verifyStatus === "approved"}
-                    onClick={() => run(() => verifyDocumentAction(d.id, "approved"))}
+                    onClick={() => verifyDoc(d.id, "approved")}
                   >
                     {t("admin.bkApprove")}
                   </Button>
@@ -256,7 +279,7 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
                     size="sm"
                     className="text-[var(--color-error)]"
                     disabled={busy || d.verifyStatus === "rejected"}
-                    onClick={() => run(() => verifyDocumentAction(d.id, "rejected"))}
+                    onClick={() => verifyDoc(d.id, "rejected")}
                   >
                     {t("admin.bkReject")}
                   </Button>

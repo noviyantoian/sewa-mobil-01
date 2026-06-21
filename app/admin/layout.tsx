@@ -16,6 +16,7 @@ import {
   IdentificationCard,
   SteeringWheel,
   MapPin,
+  UsersThree,
   GearSix,
   List,
   X,
@@ -41,6 +42,7 @@ const nav: NavItem[] = [
   { href: "/admin/verifikasi", key: "admin.navVerification", icon: <IdentificationCard size={20} /> },
   { href: "/admin/sopir", key: "admin.navDrivers", icon: <SteeringWheel size={20} /> },
   { href: "/admin/lokasi", key: "admin.navLocations", icon: <MapPin size={20} /> },
+  { href: "/admin/pengguna", key: "admin.navUsers", icon: <UsersThree size={20} /> },
   { href: "/admin/pengaturan", key: "admin.navSettings", icon: <GearSix size={20} /> },
 ];
 

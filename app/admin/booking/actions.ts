@@ -86,21 +86,26 @@ export async function updateBookingStatusAction(
   }
 }
 
+export type VerifyActionResult =
+  | { ok: true; by: string | null }
+  | { ok: false; error: string };
+
 export async function verifyDocumentAction(
   docId: string,
   status: string,
-): Promise<BookingActionResult> {
+): Promise<VerifyActionResult> {
   try {
-    await requireAdmin();
+    const user = await requireAdmin();
     if (!idSchema.safeParse(docId).success) return { ok: false, error: "invalid" };
     const parsed = verifySchema.safeParse(status);
     if (!parsed.success) return { ok: false, error: "invalid" };
     const tenantId = await getActiveTenantId();
-    const ok = await updateDocumentStatus(tenantId, docId, parsed.data);
+    const by = user.email ?? null;
+    const ok = await updateDocumentStatus(tenantId, docId, parsed.data, by);
     if (!ok) return { ok: false, error: "not_found" };
     revalidatePath("/admin/booking");
     revalidatePath("/admin/verifikasi");
-    return { ok: true };
+    return { ok: true, by };
   } catch (e) {
     console.error("[verifyDocumentAction]", e);
     return { ok: false, error: "failed" };

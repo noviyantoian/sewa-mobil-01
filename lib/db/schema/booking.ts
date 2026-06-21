@@ -78,6 +78,9 @@ export const documents = pgTable("documents", {
     .$type<VerifyStatus>()
     .notNull()
     .default("pending"),
+  /** Audit trail for manual verification: which admin decided, and when. */
+  verifiedBy: text("verified_by"),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
 

@@ -29,13 +29,31 @@ const catLabel: Record<UiCar["category"], string> = {
   ev: "Electric",
 };
 
+/** Count units by live state: running (out on a booking) wins over status. */
+function unitSummary(list: AdminUnit[]): {
+  running: number;
+  available: number;
+  maintenance: number;
+} {
+  let running = 0;
+  let available = 0;
+  let maintenance = 0;
+  for (const u of list) {
+    if (u.running) running += 1;
+    else if (u.status === "maintenance") maintenance += 1;
+    else available += 1;
+  }
+  return { running, available, maintenance };
+}
+
 export function ArmadaClient({
   cars,
   units,
 }: {
   cars: UiCar[];
-  units: AdminUnit[];
+  units?: AdminUnit[];
 }) {
+  const unitList = units ?? [];
   const t = useT();
   const router = useRouter();
   const [deleting, setDeleting] = useState<UiCar | null>(null);
@@ -43,7 +61,7 @@ export function ArmadaClient({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const unitsByCar = new Map<string, AdminUnit[]>();
-  for (const u of units) {
+  for (const u of unitList) {
     const list = unitsByCar.get(u.carId) ?? [];
     unitsByCar.set(u.carId, [...list, u]);
   }
@@ -95,7 +113,7 @@ export function ArmadaClient({
         const list = unitsByCar.get(c.id) ?? [];
         if (list.length === 0)
           return <span className="text-[var(--color-mute)]">—</span>;
-        const running = list.filter((u) => u.running).length;
+        const s = unitSummary(list);
         const open = expanded.has(c.id);
         return (
           <button
@@ -104,10 +122,17 @@ export function ArmadaClient({
             aria-expanded={open}
             className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--color-ink)] transition-colors hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
           >
-            <span className="tnum">{list.length} {t("admin.unitsCount")}</span>
-            {running > 0 && (
+            <span className="tnum text-[var(--color-success)]">
+              {s.available} {t("admin.unitAvailable")}
+            </span>
+            {s.running > 0 && (
               <span className="tnum text-[var(--color-warning)]">
-                · {running} {t("admin.unitRunning")}
+                · {s.running} {t("admin.unitRunning")}
+              </span>
+            )}
+            {s.maintenance > 0 && (
+              <span className="tnum text-[var(--color-mute)]">
+                · {s.maintenance} {t("admin.unitMaintenance")}
               </span>
             )}
             <CaretDown
@@ -137,6 +162,53 @@ export function ArmadaClient({
         ),
     },
   ];
+
+  /** Inline sub-row: the unit list (plates + live state) for one expanded model. */
+  const renderUnitsPanel = (c: UiCar) => {
+    const list = unitsByCar.get(c.id) ?? [];
+    return (
+      <div className="pt-1">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <span className="label-caps text-[var(--color-mute)]">
+            {t("admin.unitsTitle")}
+          </span>
+          <button
+            type="button"
+            onClick={() => openEdit(c)}
+            className="text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--color-primary)] hover:underline"
+          >
+            {t("admin.unitsManage")}
+          </button>
+        </div>
+        <ul className="flex flex-col">
+          {list.map((u) => (
+            <li
+              key={u.id}
+              className="flex flex-wrap items-center gap-3 border-t border-[var(--color-hairline)] py-2.5 first:border-t-0 first:pt-0"
+            >
+              <span className="tnum w-32 font-bold text-[var(--color-ink)]">{u.plate}</span>
+              <span className="flex-1 text-[13px] text-[var(--color-body)]">
+                {u.label || <span className="text-[var(--color-mute)]">—</span>}
+                {u.running && u.booking && (
+                  <span className="ml-2 text-[12px] text-[var(--color-mute)]">
+                    · {u.booking.customerName ?? "—"}
+                    {u.booking.driverName ? ` · ${u.booking.driverName}` : ""}
+                  </span>
+                )}
+              </span>
+              {u.running ? (
+                <Badge tone="warning">{t("admin.unitRunning")}</Badge>
+              ) : u.status === "maintenance" ? (
+                <Badge tone="neutral">{t("admin.unitMaintenance")}</Badge>
+              ) : (
+                <Badge tone="success">{t("admin.unitAvailable")}</Badge>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -179,57 +251,10 @@ export function ArmadaClient({
               </Button>
             </div>
           )}
+          isRowExpanded={(c) => expanded.has(c.id)}
+          expandedContent={renderUnitsPanel}
         />
       </section>
-
-      {[...expanded]
-        .map((id) => cars.find((c) => c.id === id))
-        .filter((c): c is UiCar => !!c)
-        .map((c) => {
-          const list = unitsByCar.get(c.id) ?? [];
-          return (
-            <section key={c.id} className="card shadow-sm p-6">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="text-[15px] font-bold tracking-[-0.01em] text-[var(--color-ink)]">
-                  {c.brand} {c.name}
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => openEdit(c)}
-                  className="text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--color-primary)] hover:underline"
-                >
-                  {t("admin.unitsManage")}
-                </button>
-              </div>
-              <ul className="flex flex-col">
-                {list.map((u) => (
-                  <li
-                    key={u.id}
-                    className="flex flex-wrap items-center gap-3 border-t border-[var(--color-hairline)] py-2.5 first:border-t-0 first:pt-0"
-                  >
-                    <span className="tnum w-32 font-bold text-[var(--color-ink)]">{u.plate}</span>
-                    <span className="flex-1 text-[13px] text-[var(--color-body)]">
-                      {u.label || <span className="text-[var(--color-mute)]">—</span>}
-                      {u.running && u.booking && (
-                        <span className="ml-2 text-[12px] text-[var(--color-mute)]">
-                          · {u.booking.customerName ?? "—"}
-                          {u.booking.driverName ? ` · ${u.booking.driverName}` : ""}
-                        </span>
-                      )}
-                    </span>
-                    {u.running ? (
-                      <Badge tone="warning">{t("admin.unitRunning")}</Badge>
-                    ) : u.status === "maintenance" ? (
-                      <Badge tone="neutral">{t("admin.unitMaintenance")}</Badge>
-                    ) : (
-                      <Badge tone="success">{t("admin.unitAvailable")}</Badge>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          );
-        })}
 
       <Dialog.Root open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <Dialog.Portal>

@@ -38,6 +38,8 @@ export const plans = pgTable("plans", {
   priceMonth: integer("price_month").notNull().default(0),
   features: jsonb("features").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
   maxCars: integer("max_cars").notNull().default(0),
+  /** Seat limit (staff users) per tier. NULL = unlimited (enterprise). */
+  maxUsers: integer("max_users"),
 });
 
 /**

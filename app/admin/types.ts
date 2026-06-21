@@ -72,6 +72,13 @@ export interface BookingDetailVM {
   ret: string | null;
   pickupAddress: string | null; // customer delivery address
   returnAddress: string | null;
-  documents: { id: string; type: string; url: string; verifyStatus: string }[];
+  documents: {
+    id: string;
+    type: string;
+    url: string;
+    verifyStatus: string;
+    verifiedBy: string | null;
+    verifiedAt: string | null;
+  }[];
   drivers: { id: string; name: string }[]; // assignable
 }

@@ -1,6 +1,6 @@
-import { and, eq, gt, inArray, lt, ne } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, ne, sql } from "drizzle-orm";
 import type { Tx } from "@/lib/db";
-import { bookings, cars, type BookingStatus } from "@/lib/db/schema";
+import { bookings, carUnits, cars, type BookingStatus } from "@/lib/db/schema";
 
 /**
  * Availability / double-booking guard (PRD §6.2, booking domain rule §7).
@@ -49,16 +49,28 @@ interface UnitSettings {
   trackUnits: boolean;
 }
 
+/**
+ * Stock for a model. When it tracks units, the count is derived from the number
+ * of registered plates (`car_units`) — the admin manages units in the armada UI,
+ * so the count is always the real plate inventory, never a stale integer column.
+ */
 async function carUnitSettings(
   tx: Tx,
   carId: string,
 ): Promise<UnitSettings | null> {
   const [row] = await tx
-    .select({ unitCount: cars.unitCount, trackUnits: cars.trackUnits })
+    .select({ trackUnits: cars.trackUnits })
     .from(cars)
     .where(eq(cars.id, carId))
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+  if (!row.trackUnits) return { unitCount: 0, trackUnits: false };
+
+  const [c] = await tx
+    .select({ n: sql<number>`count(*)::int` })
+    .from(carUnits)
+    .where(eq(carUnits.carId, carId));
+  return { unitCount: Number(c?.n ?? 0), trackUnits: true };
 }
 
 /**

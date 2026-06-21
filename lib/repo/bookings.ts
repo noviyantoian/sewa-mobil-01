@@ -139,6 +139,8 @@ export interface BookingDocument {
   type: string;
   url: string;
   verifyStatus: string;
+  verifiedBy: string | null;
+  verifiedAt: string | null;
 }
 
 export interface BookingDetail {
@@ -199,30 +201,46 @@ export async function getBookingDetail(
             .limit(1)
         )[0] ?? null)
       : null;
-    const docs = await tx
+    const docRows = await tx
       .select({
         id: documents.id,
         type: documents.type,
         url: documents.url,
         verifyStatus: documents.verifyStatus,
+        verifiedBy: documents.verifiedBy,
+        verifiedAt: documents.verifiedAt,
       })
       .from(documents)
       .where(eq(documents.bookingId, b.id));
+    const docs: BookingDocument[] = docRows.map((d) => ({
+      ...d,
+      verifiedAt: d.verifiedAt ? d.verifiedAt.toISOString() : null,
+    }));
 
     return { booking: b, car, driver, pickup, ret, documents: docs };
   });
 }
 
-/** Approve/reject an uploaded identity document. */
+/**
+ * Approve/reject an uploaded identity document. Records the deciding admin
+ * (`verifiedBy`) + timestamp for the audit trail; clears both when reset to
+ * pending.
+ */
 export async function updateDocumentStatus(
   tenantId: string,
   docId: string,
   status: VerifyStatus,
+  verifiedBy: string | null,
 ): Promise<boolean> {
+  const decided = status !== "pending";
   return withTenant(tenantId, async (tx) => {
     const [row] = await tx
       .update(documents)
-      .set({ verifyStatus: status })
+      .set({
+        verifyStatus: status,
+        verifiedBy: decided ? verifiedBy : null,
+        verifiedAt: decided ? new Date() : null,
+      })
       .where(eq(documents.id, docId))
       .returning({ id: documents.id });
     return !!row;
