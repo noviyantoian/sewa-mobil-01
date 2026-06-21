@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ShieldCheck, IdentificationCard, Phone, SealCheck } from "@phosphor-icons/react";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { CarCell } from "@/components/admin/CarCell";
 import { useT } from "@/lib/i18n/I18nProvider";
 import type { AdminBooking } from "../types";
+import { updateBookingStatusAction } from "../booking/actions";
 
 const DOC_IMAGE = "/images/trust-verifikasi.webp";
 
@@ -18,11 +20,22 @@ export function VerifikasiClient({ bookings }: { bookings: AdminBooking[] }) {
     bookings.filter((b) => b.status === "pending")
   );
 
-  const resolve = (b: AdminBooking, approved: boolean) => {
-    setQueue((q) => q.filter((x) => x.id !== b.id));
-    toast(approved ? t("admin.approve") : t("admin.reject"), {
-      description: `${b.id} · ${b.customerName}`,
-    });
+  const router = useRouter();
+
+  const resolve = async (b: AdminBooking, approved: boolean) => {
+    const res = await updateBookingStatusAction(
+      b.bookingId,
+      approved ? "confirmed" : "cancelled",
+    );
+    if (res.ok) {
+      setQueue((q) => q.filter((x) => x.id !== b.id));
+      toast.success(approved ? t("admin.approve") : t("admin.reject"), {
+        description: `${b.id} · ${b.customerName}`,
+      });
+      router.refresh();
+    } else {
+      toast.error(t("admin.errFailed"));
+    }
   };
 
   return (
