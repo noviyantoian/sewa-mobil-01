@@ -6,9 +6,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft, X, Plus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/ui/Input";
+import { Field, Input, Select } from "@/components/ui/Input";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { selectClass } from "@/components/admin/formStyles";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { createCarAction, updateCarAction } from "./actions";
 
@@ -185,13 +184,13 @@ export function CarForm({
             <Input id="brand" value={f.brand} onChange={text("brand")} required />
           </Field>
           <Field label={t("admin.fCategory")} htmlFor="category">
-            <select id="category" value={f.category} onChange={text("category")} className={selectClass}>
+            <Select id="category" value={f.category} onChange={text("category")}>
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>
                   {c.toUpperCase()}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
         </div>
       </Section>
@@ -202,13 +201,13 @@ export function CarForm({
             <Input id="capacity" type="number" min={1} value={f.capacity} onChange={text("capacity")} required />
           </Field>
           <Field label={t("admin.fTransmission")} htmlFor="transmission">
-            <select id="transmission" value={f.transmission} onChange={text("transmission")} className={selectClass}>
+            <Select id="transmission" value={f.transmission} onChange={text("transmission")}>
               {TRANSMISSIONS.map((tr) => (
                 <option key={tr} value={tr}>
                   {tr === "auto" ? t("common.auto") : t("common.manual")}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label={t("admin.fFuel")} htmlFor="fuel">
             <Input id="fuel" value={f.fuel} onChange={text("fuel")} placeholder={t("admin.fFuelPlaceholder")} />

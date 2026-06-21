@@ -11,8 +11,8 @@ import {
   ArrowSquareOut,
 } from "@phosphor-icons/react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { selectClass } from "@/components/admin/formStyles";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Input";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR, formatDateRange } from "@/lib/format";
 import type { BookingStatus } from "@/lib/db/schema";
@@ -143,11 +143,10 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
         </Card>
 
         <Card title={t("admin.bkChangeStatus")}>
-          <select
+          <Select
             value={vm.status}
             disabled={busy}
             onChange={(e) => run(() => updateBookingStatusAction(vm.bookingId, e.target.value))}
-            className={selectClass}
             aria-label={t("admin.bkChangeStatus")}
           >
             {STATUSES.map((s) => (
@@ -155,15 +154,14 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
                 {t(`status.${s}`)}
               </option>
             ))}
-          </select>
+          </Select>
         </Card>
 
         <Card title={t("admin.bkDriver")}>
-          <select
+          <Select
             value={vm.driverId ?? ""}
             disabled={busy || vm.drivers.length === 0}
             onChange={(e) => run(() => assignDriverAction(vm.bookingId, e.target.value))}
-            className={selectClass}
             aria-label={t("admin.bkAssign")}
           >
             <option value="" disabled>
@@ -174,7 +172,7 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
                 {d.name}
               </option>
             ))}
-          </select>
+          </Select>
         </Card>
       </div>
 

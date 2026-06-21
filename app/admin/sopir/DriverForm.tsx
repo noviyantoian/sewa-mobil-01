@@ -6,8 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/ui/Input";
-import { selectClass } from "@/components/admin/formStyles";
+import { Field, Input, Select } from "@/components/ui/Input";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { createDriverAction, updateDriverAction } from "./actions";
 
@@ -118,13 +117,13 @@ export function DriverForm({
             <Input id="drating" type="number" min={0} max={5} step="0.01" value={f.rating} onChange={set("rating")} required />
           </Field>
           <Field label={t("admin.fStatus")} htmlFor="dstatus">
-            <select id="dstatus" value={f.status} onChange={set("status")} className={`${selectClass} capitalize`}>
+            <Select id="dstatus" value={f.status} onChange={set("status")} className="capitalize">
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
         </div>
       </Section>
