@@ -16,6 +16,7 @@ import {
   IdentificationCard,
   SteeringWheel,
   MapPin,
+  GearSix,
   List,
   X,
   ArrowSquareOut,
@@ -40,6 +41,7 @@ const nav: NavItem[] = [
   { href: "/admin/verifikasi", key: "admin.navVerification", icon: <IdentificationCard size={20} /> },
   { href: "/admin/sopir", key: "admin.navDrivers", icon: <SteeringWheel size={20} /> },
   { href: "/admin/lokasi", key: "admin.navLocations", icon: <MapPin size={20} /> },
+  { href: "/admin/pengaturan", key: "admin.navSettings", icon: <GearSix size={20} /> },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {

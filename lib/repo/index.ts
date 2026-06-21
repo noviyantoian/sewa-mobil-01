@@ -5,3 +5,4 @@
  */
 export * from "./fleet"; // listCars, getCarBySlug, listLocations, listDrivers
 export * from "./bookings"; // listBookings, getBookingByCode, createBooking, DoubleBookingError
+export * from "./tenant"; // updateTenantSettings
