@@ -4,7 +4,14 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/guard";
 import { getActiveTenantId } from "@/lib/tenant/current";
-import { updateBookingStatus, updateDocumentStatus } from "@/lib/repo";
+import {
+  updateBookingStatus,
+  updateDocumentStatus,
+  getCarById,
+  createBooking,
+  DoubleBookingError,
+} from "@/lib/repo";
+import { calcPrice } from "@/lib/pricing";
 
 const statusSchema = z.enum([
   "pending",
@@ -15,6 +22,24 @@ const statusSchema = z.enum([
 ]);
 
 const verifySchema = z.enum(["pending", "approved", "rejected"]);
+
+const DAY_START = "T08:00:00+07:00";
+
+const manualSchema = z.object({
+  carId: z.string().uuid(),
+  mode: z.enum(["selfDrive", "withDriver"]),
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  customerName: z.string().min(2).max(120),
+  customerPhone: z.string().min(6).max(24),
+  pickupLocationId: z.string().uuid().optional(),
+  returnLocationId: z.string().uuid().optional(),
+  driverId: z.string().uuid().optional(),
+});
+
+export type ManualBookingResult =
+  | { ok: true; code: string }
+  | { ok: false; error: "invalid" | "car_not_found" | "double_booking" | "failed" };
 
 export type BookingActionResult = { ok: true } | { ok: false; error: string };
 
@@ -64,6 +89,60 @@ export async function verifyDocumentAction(
     return { ok: true };
   } catch (e) {
     console.error("[verifyDocumentAction]", e);
+    return { ok: false, error: "failed" };
+  }
+}
+
+/**
+ * Admin-created booking. Price/deposit recomputed server-side from the DB car;
+ * availability checked atomically inside createBooking (no double-booking).
+ */
+export async function createManualBookingAction(
+  raw: unknown,
+): Promise<ManualBookingResult> {
+  try {
+    await requireAdmin();
+    const parsed = manualSchema.safeParse(raw);
+    if (!parsed.success) return { ok: false, error: "invalid" };
+    const d = parsed.data;
+    const tenantId = await getActiveTenantId();
+    const car = await getCarById(tenantId, d.carId);
+    if (!car) return { ok: false, error: "car_not_found" };
+
+    const fromAt = new Date(`${d.from}${DAY_START}`);
+    const toAt = new Date(`${d.to}${DAY_START}`);
+    if (
+      Number.isNaN(fromAt.getTime()) ||
+      Number.isNaN(toAt.getTime()) ||
+      toAt <= fromAt
+    ) {
+      return { ok: false, error: "invalid" };
+    }
+
+    const price = calcPrice(car, d.mode, fromAt, toAt);
+    const booking = await createBooking(tenantId, {
+      carId: car.id,
+      mode: d.mode,
+      from: fromAt,
+      to: toAt,
+      customerName: d.customerName,
+      customerPhone: d.customerPhone,
+      total: price.subtotal,
+      deposit: price.deposit,
+      pickupLocationId: d.pickupLocationId,
+      returnLocationId: d.returnLocationId,
+      driverId: d.driverId,
+      channel: "web_wa",
+    });
+    for (const p of ["/admin/booking", "/admin", "/admin/kalender"]) {
+      revalidatePath(p);
+    }
+    return { ok: true, code: booking.code };
+  } catch (e) {
+    if (e instanceof DoubleBookingError) {
+      return { ok: false, error: "double_booking" };
+    }
+    console.error("[createManualBookingAction]", e);
     return { ok: false, error: "failed" };
   }
 }

@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Key, SteeringWheel } from "@phosphor-icons/react";
+import { Key, SteeringWheel, Plus } from "@phosphor-icons/react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { CarCell } from "@/components/admin/CarCell";
+import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { cn, formatIDR, formatDateRange } from "@/lib/format";
 import type { BookingStatus } from "@/lib/mock/bookings";
@@ -99,9 +100,15 @@ export function BookingClient({ bookings }: { bookings: AdminBooking[] }) {
 
   return (
     <div className="flex flex-col gap-7">
-      <header className="flex flex-col gap-1">
-        <span className="eyebrow">{t("admin.navBookings")}</span>
-        <h1 className="display-sm">{t("admin.bookingsTitle")}</h1>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="eyebrow">{t("admin.navBookings")}</span>
+          <h1 className="display-sm">{t("admin.bookingsTitle")}</h1>
+        </div>
+        <Button variant="primary" onClick={() => router.push("/admin/booking/baru")}>
+          <Plus size={17} weight="bold" />
+          {t("admin.bkNew")}
+        </Button>
       </header>
 
       <div className="no-scrollbar flex gap-2 overflow-x-auto">
