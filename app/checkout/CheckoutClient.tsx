@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,6 @@ import { CheckCircle, CaretLeft, LockSimple } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { HoldTimer } from "@/components/booking/HoldTimer";
 import { Stepper } from "@/components/booking/Stepper";
-import { type PaymentMethod } from "@/components/booking/PaymentMethods";
 import { PriceSummary, type PriceBreakdown } from "@/components/booking/PriceSummary";
 import {
   StepTrip,
@@ -49,6 +48,8 @@ export function CheckoutClient({ car }: { car: UiCar }) {
   const mode: Mode = params.get("mode") === "withDriver" ? "withDriver" : "selfDrive";
   const from = params.get("from") ?? nextDay(1);
   const to = params.get("to") ?? nextDay(4);
+  const prefillName = params.get("name") ?? "";
+  const prefillPhone = params.get("phone") ?? "";
 
   const [step, setStep] = useState(0);
   const [addons, setAddons] = useState<Record<AddonKey, boolean>>({
@@ -57,7 +58,6 @@ export function CheckoutClient({ car }: { car: UiCar }) {
     delivery: false,
   });
   const [scheme, setScheme] = useState<Scheme>("full");
-  const [payment, setPayment] = useState<PaymentMethod>("qris");
   const [agree, setAgree] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pickupAddress, setPickupAddress] = useState("");
@@ -67,12 +67,25 @@ export function CheckoutClient({ car }: { car: UiCar }) {
     register,
     formState: { errors, isValid },
     watch,
+    trigger,
   } = useForm<IdentityForm>({
     resolver: zodResolver(identitySchema),
     mode: "onChange",
-    defaultValues: { idType: "ktp" },
+    defaultValues: {
+      idType: "ktp",
+      fullName: prefillName,
+      phone: prefillPhone,
+    },
   });
   const idType = watch("idType");
+
+  // Prefilled name/phone (from car detail) need validation kicked so the
+  // "Lanjut" gate reflects them without the user re-touching the fields.
+  useEffect(() => {
+    if (prefillName || prefillPhone) {
+      void trigger();
+    }
+  }, [prefillName, prefillPhone, trigger]);
 
   const price: PriceBreakdown = useMemo(() => {
     const rate = mode === "withDriver" ? car.rateWithDriver : car.rateSelfDrive;
@@ -93,6 +106,7 @@ export function CheckoutClient({ car }: { car: UiCar }) {
   const canPlace = isValid && agree;
 
   const place = async () => {
+    if (submitting) return; // guard against double-submit (duplicate bookings)
     setSubmitting(true);
     const id = watch();
     const res = await createBookingAction({
@@ -144,8 +158,6 @@ export function CheckoutClient({ car }: { car: UiCar }) {
                   setAddons={setAddons}
                   scheme={scheme}
                   setScheme={setScheme}
-                  payment={payment}
-                  setPayment={setPayment}
                   pickupAddress={pickupAddress}
                   setPickupAddress={setPickupAddress}
                   returnAddress={returnAddress}
@@ -180,7 +192,7 @@ export function CheckoutClient({ car }: { car: UiCar }) {
                   variant="primary"
                   size="md"
                   loading={submitting}
-                  disabled={!canPlace}
+                  disabled={!canPlace || submitting}
                   onClick={place}
                 >
                   {t("checkout.placeOrder")}
