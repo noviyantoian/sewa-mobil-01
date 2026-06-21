@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { asset } from "@/lib/asset";
 import { Reveal } from "@/components/ui/Reveal";
 
 const partners = [
@@ -43,7 +44,7 @@ export function LogoStrip() {
                 className="group flex shrink-0 items-center gap-2.5"
               >
                 <Image
-                  src={`/images/logos/${p.slug}.svg`}
+                  src={asset(`/images/logos/${p.slug}.svg`)}
                   alt={p.name}
                   width={28}
                   height={28}

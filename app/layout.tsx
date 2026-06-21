@@ -5,6 +5,7 @@ import "./globals.css";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
+import { asset } from "@/lib/asset";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "FolkaDrive — Sewa mobil tanpa drama",
     description: "Mobil tepercaya, harga jelas, kapan saja.",
-    images: ["/images/og-default.webp"],
+    images: [asset("/images/og-default.webp")],
     type: "website",
     siteName: "FolkaDrive",
     locale: "id_ID",
@@ -49,7 +50,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "FolkaDrive — Sewa mobil tanpa drama",
     description: "Mobil tepercaya, harga jelas, kapan saja.",
-    images: ["/images/og-default.webp"],
+    images: [asset("/images/og-default.webp")],
   },
 };
 

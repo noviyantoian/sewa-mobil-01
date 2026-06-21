@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { CarCell } from "@/components/admin/CarCell";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { asset } from "@/lib/asset";
 import type { AdminBooking } from "../types";
 import { updateBookingStatusAction } from "../booking/actions";
 
-const DOC_IMAGE = "/images/trust-verifikasi.webp";
+const DOC_IMAGE = asset("/images/trust-verifikasi.webp");
 
 export function VerifikasiClient({ bookings }: { bookings: AdminBooking[] }) {
   const t = useT();

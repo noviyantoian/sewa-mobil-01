@@ -17,6 +17,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { useT, useI18n } from "@/lib/i18n/I18nProvider";
+import { asset } from "@/lib/asset";
 
 type StepDetail = {
   intro: string;
@@ -106,7 +107,10 @@ const CHECKLIST: Record<"id" | "en", { title: string; items: string[] }> = {
 };
 
 const STEP_ICONS = [MagnifyingGlass, ShieldCheck, Key];
-const STEP_IMAGES = ["/images/how-1-search.webp", "/images/how-2-pickup.webp"];
+const STEP_IMAGES = [
+  asset("/images/how-1-search.webp"),
+  asset("/images/how-2-pickup.webp"),
+];
 const CHECK_ICONS = [IdentificationCard, FileText, CheckCircle, CreditCard];
 
 export default function CaraKerjaPage() {

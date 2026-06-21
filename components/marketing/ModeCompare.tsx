@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Check, ArrowRight } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { asset } from "@/lib/asset";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -27,7 +28,7 @@ export function ModeCompare() {
             <article className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[var(--color-hairline)] bg-[var(--color-canvas)]">
               <div className="relative aspect-[2/1] overflow-hidden sm:aspect-[16/10]">
                 <Image
-                  src="/images/feature-self-drive.webp"
+                  src={asset("/images/feature-self-drive.webp")}
                   alt={t("modes.selfDriveTitle")}
                   fill
                   sizes="(max-width: 1024px) 100vw, 50vw"
@@ -65,7 +66,7 @@ export function ModeCompare() {
             <article className="flex h-full flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-dark)] text-[var(--color-on-dark)]">
               <div className="relative aspect-[2/1] overflow-hidden sm:aspect-[16/10]">
                 <Image
-                  src="/images/feature-with-driver.webp"
+                  src={asset("/images/feature-with-driver.webp")}
                   alt={t("modes.withDriverTitle")}
                   fill
                   sizes="(max-width: 1024px) 100vw, 50vw"

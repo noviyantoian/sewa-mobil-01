@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { CheckCircle, Star } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { asset } from "@/lib/asset";
 import { SearchBar } from "@/components/booking/SearchBar";
 
 export function Hero() {
@@ -64,7 +65,7 @@ export function Hero() {
         <div className="relative hidden lg:block">
           <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] shadow-xl">
             <Image
-              src="/images/hero-mobile.webp"
+              src={asset("/images/hero-mobile.webp")}
               alt="Mobil FolkaDrive di jalan pesisir saat matahari terbit"
               fill
               priority

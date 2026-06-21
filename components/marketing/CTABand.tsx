@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, WhatsappLogo } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { asset } from "@/lib/asset";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -17,7 +18,7 @@ export function CTABand() {
       <div className="container-folka">
         <div className="relative isolate overflow-hidden rounded-[28px]">
           <Image
-            src="/images/cta-band.webp"
+            src={asset("/images/cta-band.webp")}
             alt=""
             fill
             sizes="(max-width: 1280px) 100vw, 1232px"

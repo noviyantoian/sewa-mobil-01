@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ShieldCheck, Sparkle, Lock, Headset, type Icon } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { asset } from "@/lib/asset";
 import { Reveal } from "@/components/ui/Reveal";
 
 const points: { key: "p1" | "p2" | "p3" | "p4"; icon: Icon }[] = [
@@ -55,7 +56,7 @@ export function TrustSection() {
         <Reveal className="mt-10 overflow-hidden rounded-[24px] border border-[var(--color-hairline-dark)] sm:mt-14">
           <div className="relative aspect-[21/9] w-full">
             <Image
-              src="/images/trust-fleet.webp"
+              src={asset("/images/trust-fleet.webp")}
               alt={t("trust.title")}
               fill
               sizes="(max-width: 1280px) 100vw, 1280px"
