@@ -372,6 +372,14 @@
     "errSlugTaken": "Slug sudah dipakai mobil lain.",
     "errCarInUse": "Mobil punya booking aktif, tak bisa dihapus.",
     "errFailed": "Gagal menyimpan. Coba lagi.",
+    "addDriver": "Tambah sopir",
+    "driverEdit": "Edit sopir",
+    "driverDeleteConfirm": "Hapus sopir ini?",
+    "fExperience": "Pengalaman (tahun)",
+    "fRating": "Rating (0-5)",
+    "fStatus": "Status",
+    "fCity": "Kota",
+    "errDriverInUse": "Sopir punya booking, tak bisa dihapus.",
     "exp": "thn pengalaman"
   },
   "howPage": {

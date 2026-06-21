@@ -57,6 +57,21 @@ export async function updateBookingStatus(
   });
 }
 
+export async function assignDriver(
+  tenantId: string,
+  bookingId: string,
+  driverId: string,
+): Promise<BookingRow | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [row] = await tx
+      .update(bookings)
+      .set({ driverId })
+      .where(eq(bookings.id, bookingId))
+      .returning();
+    return row ?? null;
+  });
+}
+
 export async function getBookingByCode(
   tenantId: string,
   code: string,

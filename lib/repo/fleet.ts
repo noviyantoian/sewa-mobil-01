@@ -279,3 +279,53 @@ export async function updateCar(
 export async function deleteCar(tenantId: string, id: string): Promise<void> {
   await withTenant(tenantId, (tx) => tx.delete(cars).where(eq(cars.id, id)));
 }
+
+export interface DriverInput {
+  name: string;
+  experienceYears: number;
+  rating: number;
+  city?: string;
+  status: "idle" | "assigned" | "off";
+}
+
+function driverColumns(input: DriverInput) {
+  return {
+    name: input.name,
+    experienceYears: input.experienceYears,
+    rating: String(input.rating),
+    city: input.city?.trim() || null,
+    status: input.status,
+  };
+}
+
+export async function createDriver(
+  tenantId: string,
+  input: DriverInput,
+): Promise<DriverRow> {
+  return withTenant(tenantId, async (tx) => {
+    const [d] = await tx
+      .insert(drivers)
+      .values({ tenantId, ...driverColumns(input) })
+      .returning();
+    return d;
+  });
+}
+
+export async function updateDriver(
+  tenantId: string,
+  id: string,
+  input: DriverInput,
+): Promise<DriverRow | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [d] = await tx
+      .update(drivers)
+      .set(driverColumns(input))
+      .where(eq(drivers.id, id))
+      .returning();
+    return d ?? null;
+  });
+}
+
+export async function deleteDriver(tenantId: string, id: string): Promise<void> {
+  await withTenant(tenantId, (tx) => tx.delete(drivers).where(eq(drivers.id, id)));
+}

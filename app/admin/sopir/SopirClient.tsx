@@ -1,15 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import { toast } from "sonner";
-import { Star, SteeringWheel, MapPin, X, Check, UserPlus } from "@phosphor-icons/react";
+import {
+  Star,
+  SteeringWheel,
+  X,
+  Check,
+  UserPlus,
+  Plus,
+  PencilSimple,
+  Trash,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { CarCell } from "@/components/admin/CarCell";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatDateRange } from "@/lib/format";
 import type { AdminBooking, AdminDriver } from "../types";
+import { DriverFormDialog } from "./DriverFormDialog";
+import { assignDriverAction, deleteDriverAction } from "./actions";
 
 type Tone = "neutral" | "success" | "accent" | "outline";
 const statusTone: Record<AdminDriver["status"], Tone> = {
@@ -31,25 +43,65 @@ export function SopirClient({
   bookings: AdminBooking[];
 }) {
   const t = useT();
+  const router = useRouter();
   const assignable = bookings.filter((b) => b.status === "confirmed" && b.mode === "withDriver");
-  const [assigned, setAssigned] = useState<Record<string, string>>({});
   const [active, setActive] = useState<AdminBooking | null>(null);
+  const [assigning, setAssigning] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<AdminDriver | null>(null);
+  const [deleting, setDeleting] = useState<AdminDriver | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const idleDrivers = drivers.filter((d) => d.status === "idle");
 
-  const confirm = (booking: AdminBooking, driver: AdminDriver) => {
-    setAssigned((prev) => ({ ...prev, [booking.id]: driver.id }));
-    setActive(null);
-    toast(t("admin.assign"), { description: `${driver.name} · ${booking.id}` });
+  const confirm = async (booking: AdminBooking, driver: AdminDriver) => {
+    setAssigning(true);
+    const res = await assignDriverAction(booking.bookingId, driver.id);
+    setAssigning(false);
+    if (res.ok) {
+      setActive(null);
+      toast.success(t("admin.assign"), { description: `${driver.name} · ${booking.id}` });
+      router.refresh();
+    } else {
+      toast.error(t("admin.errFailed"));
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    setDeleteLoading(true);
+    const res = await deleteDriverAction(deleting.id);
+    setDeleteLoading(false);
+    if (res.ok) {
+      toast.success(t("admin.deleted"));
+      setDeleting(null);
+      router.refresh();
+    } else {
+      toast.error(
+        res.error === "driver_in_use" ? t("admin.errDriverInUse") : t("admin.errFailed"),
+      );
+    }
   };
 
   return (
     <div className="flex flex-col gap-9">
-      <header className="flex flex-col gap-1">
-        <span className="eyebrow">
-          <SteeringWheel size={15} weight="fill" /> {t("admin.navDrivers")}
-        </span>
-        <h1 className="display-sm">{t("admin.driversTitle")}</h1>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="eyebrow">
+            <SteeringWheel size={15} weight="fill" /> {t("admin.navDrivers")}
+          </span>
+          <h1 className="display-sm">{t("admin.driversTitle")}</h1>
+        </div>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setEditing(null);
+            setFormOpen(true);
+          }}
+        >
+          <Plus size={17} weight="bold" />
+          {t("admin.addDriver")}
+        </Button>
       </header>
 
       {/* Bookings awaiting a driver */}
@@ -59,7 +111,7 @@ export function SopirClient({
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
           {assignable.map((b) => {
-            const driverId = assigned[b.id];
+            const driverId = b.driverId ?? undefined;
             const driver = driverId ? drivers.find((d) => d.id === driverId) : undefined;
             return (
               <div key={b.id} className="card shadow-sm flex flex-col gap-4 p-5">
@@ -92,11 +144,20 @@ export function SopirClient({
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {drivers.map((d) => (
-            <DriverCard key={d.id} driver={d} />
+            <DriverCard
+              key={d.id}
+              driver={d}
+              onEdit={() => {
+                setEditing(d);
+                setFormOpen(true);
+              }}
+              onDelete={() => setDeleting(d)}
+            />
           ))}
         </div>
       </section>
 
+      {/* Assign-driver dialog */}
       <Dialog.Root open={!!active} onOpenChange={(o) => !o && setActive(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
@@ -131,8 +192,9 @@ export function SopirClient({
                 <li key={d.id}>
                   <button
                     type="button"
+                    disabled={assigning}
                     onClick={() => active && confirm(active, d)}
-                    className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-[10px] border border-[var(--color-hairline)] px-4 py-3 text-left transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-soft)]"
+                    className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-[10px] border border-[var(--color-hairline)] px-4 py-3 text-left transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
                   >
                     <div>
                       <div className="font-semibold text-[var(--color-ink)]">{d.name}</div>
@@ -154,11 +216,52 @@ export function SopirClient({
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* Driver create/edit form */}
+      {formOpen && (
+        <DriverFormDialog
+          key={editing?.id ?? "new"}
+          open={formOpen}
+          driver={editing}
+          onClose={() => setFormOpen(false)}
+        />
+      )}
+
+      {/* Driver delete confirm */}
+      <Dialog.Root open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 shadow-xl">
+            <Dialog.Title className="text-[18px] font-bold tracking-[-0.01em] text-[var(--color-ink)]">
+              {t("admin.driverDeleteConfirm")}
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-[14px] text-[var(--color-body-mid)]">
+              {deleting?.name ?? ""}
+            </Dialog.Description>
+            <div className="mt-5 flex justify-end gap-2.5">
+              <Button variant="secondary" size="md" onClick={() => setDeleting(null)}>
+                {t("admin.cancel")}
+              </Button>
+              <Button variant="primary" size="md" loading={deleteLoading} onClick={confirmDelete}>
+                {t("admin.delete")}
+              </Button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }
 
-function DriverCard({ driver }: { driver: AdminDriver }) {
+function DriverCard({
+  driver,
+  onEdit,
+  onDelete,
+}: {
+  driver: AdminDriver;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   const t = useT();
   return (
     <div className="card shadow-sm flex flex-col gap-4 p-5">
@@ -185,9 +288,20 @@ function DriverCard({ driver }: { driver: AdminDriver }) {
         <span className="tnum text-[var(--color-mute)]">
           {driver.experienceYears} {t("admin.exp")}
         </span>
-        <span className="inline-flex items-center gap-1 text-[var(--color-mute)]">
-          <MapPin size={13} /> {driver.city}
-        </span>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={onEdit} aria-label={t("admin.driverEdit")}>
+            <PencilSimple size={15} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-[var(--color-error)]"
+            onClick={onDelete}
+            aria-label={t("admin.delete")}
+          >
+            <Trash size={15} />
+          </Button>
+        </div>
       </div>
     </div>
   );
