@@ -4,6 +4,7 @@ import {
   bookings,
   type BookingChannel,
   type BookingMode,
+  type BookingStatus,
   type PickupType,
 } from "@/lib/db/schema";
 import { isCarAvailable } from "@/lib/availability";
@@ -39,6 +40,21 @@ export async function listBookings(tenantId: string): Promise<BookingRow[]> {
   return withTenant(tenantId, (tx) =>
     tx.select().from(bookings).orderBy(desc(bookings.createdAt)).limit(200),
   );
+}
+
+export async function updateBookingStatus(
+  tenantId: string,
+  bookingId: string,
+  status: BookingStatus,
+): Promise<BookingRow | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [row] = await tx
+      .update(bookings)
+      .set({ status })
+      .where(eq(bookings.id, bookingId))
+      .returning();
+    return row ?? null;
+  });
 }
 
 export async function getBookingByCode(

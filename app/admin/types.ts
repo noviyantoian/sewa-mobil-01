@@ -7,7 +7,8 @@ import type { BookingStatus } from "@/lib/mock/bookings";
  * number). Type-only module, safe to import from client components.
  */
 export interface AdminBooking {
-  id: string; // human booking code (e.g. FK-26-0001)
+  id: string; // human booking code (e.g. FK-26-0001) — for display
+  bookingId: string; // DB uuid — for mutations (status, driver assign)
   carSlug: string;
   car: UiCar | null;
   customerName: string;

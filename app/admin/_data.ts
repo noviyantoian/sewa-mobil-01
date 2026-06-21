@@ -31,6 +31,7 @@ export const getAdminData = cache(async (): Promise<AdminData> => {
     const car = b.carId ? carById.get(b.carId) ?? null : null;
     return {
       id: b.code,
+      bookingId: b.id,
       carSlug: car?.slug ?? "",
       car,
       customerName: b.customerName ?? "",

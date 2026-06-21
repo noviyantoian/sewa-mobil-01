@@ -1,22 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Key, SteeringWheel, ArrowRight } from "@phosphor-icons/react";
+import { Key, SteeringWheel } from "@phosphor-icons/react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { CarCell } from "@/components/admin/CarCell";
-import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { cn, formatIDR, formatDateRange } from "@/lib/format";
 import type { BookingStatus } from "@/lib/mock/bookings";
 import type { AdminBooking } from "../types";
+import { updateBookingStatusAction } from "./actions";
 
 const STATUSES: BookingStatus[] = ["pending", "confirmed", "active", "completed", "cancelled"];
 
 export function BookingClient({ bookings }: { bookings: AdminBooking[] }) {
   const t = useT();
+  const router = useRouter();
   const [filter, setFilter] = useState<BookingStatus | "all">("all");
+
+  const changeStatus = async (b: AdminBooking, status: string) => {
+    if (status === b.status) return;
+    const res = await updateBookingStatusAction(b.bookingId, status);
+    if (res.ok) {
+      toast.success(t("admin.saved"));
+      router.refresh();
+    } else {
+      toast.error(t("admin.errFailed"));
+    }
+  };
 
   const rows = useMemo(
     () => (filter === "all" ? bookings : bookings.filter((b) => b.status === filter)),
@@ -102,15 +115,18 @@ export function BookingClient({ bookings }: { bookings: AdminBooking[] }) {
           empty={t("common.loading")}
           actionsHeader={null}
           actions={(b) => (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2.5"
-              onClick={() => toast(b.id, { description: b.customerName })}
-              aria-label={t("common.viewDetails")}
+            <select
+              value={b.status}
+              onChange={(e) => changeStatus(b, e.target.value)}
+              aria-label={t("admin.actions")}
+              className="cursor-pointer rounded-[8px] border border-[var(--color-hairline-strong)] bg-[var(--color-canvas)] px-2 py-1.5 text-[12px] font-semibold text-[var(--color-ink)] outline-none transition-colors hover:border-[var(--color-ink)] focus:border-[var(--color-accent)]"
             >
-              <ArrowRight size={16} />
-            </Button>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {t(`status.${s}`)}
+                </option>
+              ))}
+            </select>
           )}
         />
       </section>
