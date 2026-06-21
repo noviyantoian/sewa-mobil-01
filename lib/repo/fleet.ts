@@ -329,3 +329,41 @@ export async function updateDriver(
 export async function deleteDriver(tenantId: string, id: string): Promise<void> {
   await withTenant(tenantId, (tx) => tx.delete(drivers).where(eq(drivers.id, id)));
 }
+
+export interface LocationInput {
+  city: string;
+  area: string;
+  type: "office" | "airport" | "hotel" | "other";
+}
+
+export async function createLocation(
+  tenantId: string,
+  input: LocationInput,
+): Promise<LocationRow> {
+  return withTenant(tenantId, async (tx) => {
+    const [l] = await tx
+      .insert(locations)
+      .values({ tenantId, city: input.city, area: input.area, type: input.type })
+      .returning();
+    return l;
+  });
+}
+
+export async function updateLocation(
+  tenantId: string,
+  id: string,
+  input: LocationInput,
+): Promise<LocationRow | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [l] = await tx
+      .update(locations)
+      .set({ city: input.city, area: input.area, type: input.type })
+      .where(eq(locations.id, id))
+      .returning();
+    return l ?? null;
+  });
+}
+
+export async function deleteLocation(tenantId: string, id: string): Promise<void> {
+  await withTenant(tenantId, (tx) => tx.delete(locations).where(eq(locations.id, id)));
+}

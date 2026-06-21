@@ -380,6 +380,14 @@
     "fStatus": "Status",
     "fCity": "City",
     "errDriverInUse": "Driver has bookings, cannot delete.",
+    "navLocations": "Locations",
+    "locationsTitle": "Locations & branches",
+    "addLocation": "Add location",
+    "locationEdit": "Edit location",
+    "locationDeleteConfirm": "Delete this location?",
+    "fArea": "Area / branch",
+    "fType": "Location type",
+    "errLocationInUse": "Location is used by bookings, cannot delete.",
     "exp": "yrs experience"
   },
   "howPage": {

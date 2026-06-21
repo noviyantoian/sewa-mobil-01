@@ -380,6 +380,14 @@
     "fStatus": "Status",
     "fCity": "Kota",
     "errDriverInUse": "Sopir punya booking, tak bisa dihapus.",
+    "navLocations": "Lokasi",
+    "locationsTitle": "Lokasi & cabang",
+    "addLocation": "Tambah lokasi",
+    "locationEdit": "Edit lokasi",
+    "locationDeleteConfirm": "Hapus lokasi ini?",
+    "fArea": "Area / cabang",
+    "fType": "Tipe lokasi",
+    "errLocationInUse": "Lokasi dipakai booking, tak bisa dihapus.",
     "exp": "thn pengalaman"
   },
   "howPage": {

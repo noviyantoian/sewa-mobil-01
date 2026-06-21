@@ -15,6 +15,7 @@ import {
   ListChecks,
   IdentificationCard,
   SteeringWheel,
+  MapPin,
   List,
   X,
   ArrowSquareOut,
@@ -38,6 +39,7 @@ const nav: NavItem[] = [
   { href: "/admin/booking", key: "admin.navBookings", icon: <ListChecks size={20} /> },
   { href: "/admin/verifikasi", key: "admin.navVerification", icon: <IdentificationCard size={20} /> },
   { href: "/admin/sopir", key: "admin.navDrivers", icon: <SteeringWheel size={20} /> },
+  { href: "/admin/lokasi", key: "admin.navLocations", icon: <MapPin size={20} /> },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
