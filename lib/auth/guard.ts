@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isAdminEmail } from "@/lib/auth/admin-emails";
 
 /**
  * Guard for admin Server Actions. Server Actions are POST endpoints reachable
@@ -11,7 +12,7 @@ export async function requireAdmin() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new UnauthorizedError();
+  if (!user || !isAdminEmail(user.email)) throw new UnauthorizedError();
   return user;
 }
 

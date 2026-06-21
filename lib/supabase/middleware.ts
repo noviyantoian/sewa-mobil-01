@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAdminEmail } from "@/lib/auth/admin-emails";
 
 /**
  * Refreshes the Supabase session cookie and gates `/admin`. Unauthenticated
@@ -34,14 +35,15 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
   const path = request.nextUrl.pathname;
   const isLogin = path === "/admin/login";
+  const isAdmin = isAdminEmail(user?.email);
 
-  if (path.startsWith("/admin") && !isLogin && !user) {
+  if (path.startsWith("/admin") && !isLogin && !isAdmin) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     url.searchParams.set("redirect", path);
     return NextResponse.redirect(url);
   }
-  if (isLogin && user) {
+  if (isLogin && isAdmin) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin";
     url.search = "";

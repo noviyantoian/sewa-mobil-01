@@ -6,12 +6,15 @@ import { requireAdmin } from "@/lib/auth/guard";
 import { getActiveTenantId } from "@/lib/tenant/current";
 import { createCar, updateCar, deleteCar } from "@/lib/repo";
 
+// Only allow local /images/* paths — blocks javascript:/data: and external URLs.
+const imageUrl = z
+  .string()
+  .max(300)
+  .regex(/^\/images\/[a-zA-Z0-9._/-]+$/, "image must be a /images/... path")
+  .optional();
+
 const imageSchema = z
-  .object({
-    exterior: z.string().max(300).optional(),
-    side: z.string().max(300).optional(),
-    interior: z.string().max(300).optional(),
-  })
+  .object({ exterior: imageUrl, side: imageUrl, interior: imageUrl })
   .optional();
 
 const carSchema = z.object({

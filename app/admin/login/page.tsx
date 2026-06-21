@@ -32,7 +32,10 @@ function LoginForm() {
       setLoading(false);
       return;
     }
-    router.replace(params.get("redirect") ?? "/admin");
+    const dest = params.get("redirect") ?? "/admin";
+    // Only allow internal same-origin paths (no open redirect to //evil.com).
+    const safe = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/admin";
+    router.replace(safe);
     router.refresh();
   };
 
