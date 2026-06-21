@@ -439,6 +439,10 @@
     "bkDays": "days",
     "bkErrDouble": "Dates clash with another booking.",
     "bkErrCarNotFound": "Car not found.",
+    "statusCol": "Status",
+    "emptyBookings": "No bookings yet.",
+    "fFuelPlaceholder": "Petrol",
+    "fPlatePlaceholder": "D 1234 XX",
     "exp": "yrs experience"
   },
   "howPage": {

@@ -1,5 +1,5 @@
 import type { UiCar } from "@/lib/repo";
-import type { BookingStatus } from "@/lib/mock/bookings";
+import type { BookingStatus } from "@/lib/db/schema";
 
 /**
  * Admin view models — DB rows pre-resolved into the shapes the admin client

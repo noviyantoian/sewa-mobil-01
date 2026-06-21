@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
+import { selectClass } from "@/components/admin/formStyles";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR } from "@/lib/format";
 import { calcPrice } from "@/lib/pricing";
@@ -25,9 +26,6 @@ export interface ManualOption {
   id: string;
   label: string;
 }
-
-const selectClass =
-  "w-full cursor-pointer appearance-none rounded-[10px] border border-[var(--color-hairline-strong)] bg-[var(--color-canvas)] px-3 py-2.5 text-[14px] text-[var(--color-ink)] outline-none transition-colors focus:border-[var(--color-accent)]";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (

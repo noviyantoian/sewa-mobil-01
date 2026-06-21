@@ -22,6 +22,7 @@ const statusSchema = z.enum([
 ]);
 
 const verifySchema = z.enum(["pending", "approved", "rejected"]);
+const idSchema = z.string().uuid();
 
 const DAY_START = "T08:00:00+07:00";
 
@@ -49,7 +50,7 @@ export async function updateBookingStatusAction(
 ): Promise<BookingActionResult> {
   try {
     await requireAdmin();
-    if (!bookingId) return { ok: false, error: "invalid" };
+    if (!idSchema.safeParse(bookingId).success) return { ok: false, error: "invalid" };
     const parsed = statusSchema.safeParse(status);
     if (!parsed.success) return { ok: false, error: "invalid" };
     const tenantId = await getActiveTenantId();
@@ -78,7 +79,7 @@ export async function verifyDocumentAction(
 ): Promise<BookingActionResult> {
   try {
     await requireAdmin();
-    if (!docId) return { ok: false, error: "invalid" };
+    if (!idSchema.safeParse(docId).success) return { ok: false, error: "invalid" };
     const parsed = verifySchema.safeParse(status);
     if (!parsed.success) return { ok: false, error: "invalid" };
     const tenantId = await getActiveTenantId();

@@ -11,7 +11,7 @@ import { CarCell } from "@/components/admin/CarCell";
 import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { cn, formatIDR, formatDateRange } from "@/lib/format";
-import type { BookingStatus } from "@/lib/mock/bookings";
+import type { BookingStatus } from "@/lib/db/schema";
 import type { AdminBooking } from "../types";
 import { updateBookingStatusAction } from "./actions";
 
@@ -72,7 +72,7 @@ export function BookingClient({ bookings }: { bookings: AdminBooking[] }) {
     },
     {
       key: "mode",
-      header: t("admin.actions"),
+      header: t("admin.bkMode"),
       align: "center",
       hideOnMobile: true,
       render: (b) => (
@@ -92,7 +92,7 @@ export function BookingClient({ bookings }: { bookings: AdminBooking[] }) {
     },
     {
       key: "status",
-      header: t("status.confirmed"),
+      header: t("admin.statusCol"),
       align: "right",
       render: (b) => <StatusBadge status={b.status} />,
     },
@@ -127,7 +127,7 @@ export function BookingClient({ bookings }: { bookings: AdminBooking[] }) {
           columns={columns}
           rows={rows}
           rowKey={(b) => b.id}
-          empty={t("common.loading")}
+          empty={t("admin.emptyBookings")}
           actionsHeader={null}
           actions={(b) => (
             <select

@@ -12,12 +12,23 @@ const SUPA_BASE = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
 const R2_BASE = process.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
 
 function isAllowedImageUrl(u: string): boolean {
-  if (/^\/images\/[a-zA-Z0-9._/-]+$/.test(u)) return true;
-  if (SUPA_BASE && u.startsWith(`${SUPA_BASE}/storage/v1/object/public/assets/`))
+  // Local seed paths — reject any `..` traversal segment.
+  if (/^\/images\/[a-zA-Z0-9._-]+(?:\/[a-zA-Z0-9._-]+)*$/.test(u) && !u.includes(".."))
     return true;
-  if (R2_BASE && u.startsWith(`${R2_BASE}/`)) return true;
+  // Remote: parse + normalise (collapses `..`, drops query/fragment) before prefix check.
+  try {
+    const parsed = new URL(u);
+    const normalized = parsed.origin + parsed.pathname;
+    if (SUPA_BASE && normalized.startsWith(`${SUPA_BASE}/storage/v1/object/public/assets/`))
+      return true;
+    if (R2_BASE && normalized.startsWith(`${R2_BASE}/`)) return true;
+  } catch {
+    // not a valid absolute URL
+  }
   return false;
 }
+
+const idSchema = z.string().uuid();
 
 const imageUrl = z
   .string()
@@ -85,7 +96,7 @@ export async function updateCarAction(
 ): Promise<CarActionResult> {
   try {
     await requireAdmin();
-    if (!id) return { ok: false, error: "invalid" };
+    if (!idSchema.safeParse(id).success) return { ok: false, error: "invalid" };
     const parsed = carSchema.safeParse(raw);
     if (!parsed.success) return { ok: false, error: "invalid" };
     const tenantId = await getActiveTenantId();
@@ -105,7 +116,7 @@ export async function updateCarAction(
 export async function deleteCarAction(id: string): Promise<CarActionResult> {
   try {
     await requireAdmin();
-    if (!id) return { ok: false, error: "invalid" };
+    if (!idSchema.safeParse(id).success) return { ok: false, error: "invalid" };
     const tenantId = await getActiveTenantId();
     await deleteCar(tenantId, id);
     revalidatePath("/admin/armada");

@@ -11,10 +11,11 @@ import {
   ArrowSquareOut,
 } from "@phosphor-icons/react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { selectClass } from "@/components/admin/formStyles";
 import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR, formatDateRange } from "@/lib/format";
-import type { BookingStatus } from "@/lib/mock/bookings";
+import type { BookingStatus } from "@/lib/db/schema";
 import type { BookingDetailVM } from "../../types";
 import { updateBookingStatusAction, verifyDocumentAction } from "../actions";
 import { assignDriverAction } from "../../sopir/actions";
@@ -26,9 +27,6 @@ const STATUSES: BookingStatus[] = [
   "completed",
   "cancelled",
 ];
-
-const selectClass =
-  "w-full cursor-pointer appearance-none rounded-[10px] border border-[var(--color-hairline-strong)] bg-[var(--color-canvas)] px-3 py-2.5 text-[14px] text-[var(--color-ink)] outline-none transition-colors focus:border-[var(--color-accent)]";
 
 const verifyColor: Record<string, string> = {
   approved: "text-[var(--color-success)]",
@@ -94,7 +92,7 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title={t("admin.customer")}>
           <Row label={t("admin.fName")}>{vm.customerName || "—"}</Row>
-          <Row label={t("admin.fCity")}>
+          <Row label={t("admin.bkPhone")}>
             {vm.customerPhone ? (
               <a href={`tel:${vm.customerPhone}`} className="tnum text-[var(--color-accent)] hover:underline">
                 {vm.customerPhone}

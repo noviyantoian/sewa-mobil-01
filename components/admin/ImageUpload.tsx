@@ -37,6 +37,8 @@ export function ImageUpload({
       setError(t("admin.imgError"));
     }
     setUploading(false);
+    // Reset so selecting the same file again still fires onChange.
+    if (ref.current) ref.current.value = "";
   };
 
   if (value) {

@@ -439,6 +439,10 @@
     "bkDays": "hari",
     "bkErrDouble": "Tanggal bentrok dengan booking lain.",
     "bkErrCarNotFound": "Mobil tidak ditemukan.",
+    "statusCol": "Status",
+    "emptyBookings": "Belum ada booking.",
+    "fFuelPlaceholder": "Bensin",
+    "fPlatePlaceholder": "D 1234 XX",
     "exp": "thn pengalaman"
   },
   "howPage": {

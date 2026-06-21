@@ -8,6 +8,7 @@ import { ArrowLeft, X, Plus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { selectClass } from "@/components/admin/formStyles";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { createCarAction, updateCarAction } from "./actions";
 
@@ -61,9 +62,6 @@ export function emptyCarForm(): CarFormState {
     interior: "",
   };
 }
-
-const selectClass =
-  "w-full cursor-pointer appearance-none rounded-[10px] border border-[var(--color-hairline-strong)] bg-[var(--color-canvas)] px-3 py-2.5 text-[14px] text-[var(--color-ink)] outline-none transition-colors focus:border-[var(--color-accent)]";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -213,7 +211,7 @@ export function CarForm({
             </select>
           </Field>
           <Field label={t("admin.fFuel")} htmlFor="fuel">
-            <Input id="fuel" value={f.fuel} onChange={text("fuel")} placeholder="Bensin" />
+            <Input id="fuel" value={f.fuel} onChange={text("fuel")} placeholder={t("admin.fFuelPlaceholder")} />
           </Field>
           <Field label={t("admin.fYear")} htmlFor="year">
             <Input id="year" type="number" min={1990} value={f.year} onChange={text("year")} />
@@ -222,7 +220,7 @@ export function CarForm({
             <Input id="color" value={f.color} onChange={text("color")} />
           </Field>
           <Field label={t("admin.fPlate")} htmlFor="plate">
-            <Input id="plate" value={f.plate} onChange={text("plate")} placeholder="D 1234 XX" />
+            <Input id="plate" value={f.plate} onChange={text("plate")} placeholder={t("admin.fPlatePlaceholder")} />
           </Field>
           <Field label={t("admin.fDoors")} htmlFor="doors">
             <Input id="doors" type="number" min={0} value={f.doors} onChange={text("doors")} />
