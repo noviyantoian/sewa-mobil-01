@@ -26,7 +26,7 @@ export function emptyDriverForm(): DriverFormState {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="card shadow-sm">
+    <section className="card shadow-sm p-6">
       <h2 className="mb-4 text-[15px] font-bold uppercase tracking-[0.08em] text-[var(--color-mute)]">
         {title}
       </h2>

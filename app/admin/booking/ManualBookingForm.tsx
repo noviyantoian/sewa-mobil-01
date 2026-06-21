@@ -28,7 +28,7 @@ export interface ManualOption {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="card shadow-sm">
+    <section className="card shadow-sm p-6">
       <h2 className="mb-4 text-[15px] font-bold uppercase tracking-[0.08em] text-[var(--color-mute)]">
         {title}
       </h2>
@@ -199,7 +199,7 @@ export function ManualBookingForm({
       </Section>
 
       {preview && (
-        <section className="card shadow-sm">
+        <section className="card shadow-sm p-6">
           <div className="flex items-baseline justify-between py-1">
             <span className="text-[13px] text-[var(--color-mute)]">
               {t("admin.bkSubtotal")} ({preview.days} {t("admin.bkDays")} × {formatIDR(preview.dailyRate)})
