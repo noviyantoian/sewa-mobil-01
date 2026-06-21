@@ -1,11 +1,16 @@
 import type { Car } from "@/lib/mock/cars";
 import { asset } from "@/lib/asset";
 
+/** Public site origin — set NEXT_PUBLIC_SITE_URL to the real domain at BUILD. */
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://folkadrive.com"
+).replace(/\/$/, "");
+
 /** Business NAP + brand constants. Single source of truth for SEO. */
 export const SITE = {
   name: "FolkaDrive",
   legalName: "FolkaDrive Rental",
-  url: "https://folkadrive.local",
+  url: SITE_URL,
   telephone: "+62-811-2000-800",
   email: "halo@folkadrive.local",
   address: {
@@ -21,7 +26,7 @@ export const SITE = {
   openingHours: "Mo-Su 06:00-23:00",
   sameAs: [] as string[],
   aggregateRating: { ratingValue: 4.9, reviewCount: 2400 },
-  ogImage: asset("/images/og-default.webp"),
+  ogImage: asset("/images/og-default.jpg"),
 } as const;
 
 /** Prefix a site-relative path with the absolute origin. */

@@ -4,8 +4,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { organizationSchema, websiteSchema } from "@/lib/seo";
-import { asset } from "@/lib/asset";
+import { SITE, organizationSchema, websiteSchema } from "@/lib/seo";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
   },
   description:
     "Armada terawat di Jakarta, Bandung & Bali. Lepas kunci atau dengan sopir. Harga transparan tanpa biaya tersembunyi, batal gratis H-2, booking 2 menit.",
-  metadataBase: new URL("https://folkadrive.local"),
+  metadataBase: new URL(SITE.url),
   applicationName: "FolkaDrive",
   authors: [{ name: "FolkaDrive" }],
   publisher: "FolkaDrive",
@@ -40,7 +39,15 @@ export const metadata: Metadata = {
   openGraph: {
     title: "FolkaDrive — Sewa mobil tanpa drama",
     description: "Mobil tepercaya, harga jelas, kapan saja.",
-    images: [asset("/images/og-default.webp")],
+    images: [
+      {
+        url: SITE.ogImage, // absolute (R2 CDN) JPG — renders on FB/IG/WhatsApp/Telegram
+        width: 1376,
+        height: 768,
+        type: "image/jpeg",
+        alt: "FolkaDrive — sewa mobil Jakarta, Bandung, Bali",
+      },
+    ],
     type: "website",
     siteName: "FolkaDrive",
     locale: "id_ID",
@@ -50,7 +57,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "FolkaDrive — Sewa mobil tanpa drama",
     description: "Mobil tepercaya, harga jelas, kapan saja.",
-    images: [asset("/images/og-default.webp")],
+    images: [SITE.ogImage],
   },
 };
 
