@@ -60,6 +60,8 @@ export function CheckoutClient({ car }: { car: UiCar }) {
   const [payment, setPayment] = useState<PaymentMethod>("qris");
   const [agree, setAgree] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [pickupAddress, setPickupAddress] = useState("");
+  const [returnAddress, setReturnAddress] = useState("");
 
   const {
     register,
@@ -102,6 +104,8 @@ export function CheckoutClient({ car }: { car: UiCar }) {
       phone: id.phone,
       email: id.email,
       addonsTotal: price.addonsTotal,
+      pickupAddress: addons.delivery ? pickupAddress.trim() || undefined : undefined,
+      returnAddress: addons.delivery ? returnAddress.trim() || undefined : undefined,
     });
     if (res.ok) {
       toast.success(t("confirm.title"));
@@ -142,6 +146,10 @@ export function CheckoutClient({ car }: { car: UiCar }) {
                   setScheme={setScheme}
                   payment={payment}
                   setPayment={setPayment}
+                  pickupAddress={pickupAddress}
+                  setPickupAddress={setPickupAddress}
+                  returnAddress={returnAddress}
+                  setReturnAddress={setReturnAddress}
                 />
               )}
             </div>

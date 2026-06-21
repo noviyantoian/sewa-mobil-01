@@ -45,6 +45,9 @@ export const bookings = pgTable(
     customerPhone: text("customer_phone"),
     pickupLocationId: uuid("pickup_location_id").references(() => locations.id),
     returnLocationId: uuid("return_location_id").references(() => locations.id),
+    /** Free-text customer address for delivery/pickup (PRD §7 jemput/antar). */
+    pickupAddress: text("pickup_address"),
+    returnAddress: text("return_address"),
     mode: text("mode").$type<BookingMode>().notNull().default("selfDrive"),
     pickupType: text("pickup_type").$type<PickupType>().notNull().default("office"),
     fromAt: timestamp("from_at", { withTimezone: true }).notNull(),

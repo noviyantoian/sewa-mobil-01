@@ -97,6 +97,10 @@ export function StepPayment({
   setScheme,
   payment,
   setPayment,
+  pickupAddress,
+  setPickupAddress,
+  returnAddress,
+  setReturnAddress,
 }: {
   addons: Record<AddonKey, boolean>;
   setAddons: (next: Record<AddonKey, boolean>) => void;
@@ -104,6 +108,10 @@ export function StepPayment({
   setScheme: (s: Scheme) => void;
   payment: PaymentMethod;
   setPayment: (p: PaymentMethod) => void;
+  pickupAddress: string;
+  setPickupAddress: (v: string) => void;
+  returnAddress: string;
+  setReturnAddress: (v: string) => void;
 }) {
   const t = useT();
   const addonList: { key: AddonKey; title: string; desc: string }[] = [
@@ -150,6 +158,29 @@ export function StepPayment({
             );
           })}
         </div>
+        {addons.delivery && (
+          <div className="mt-4 grid grid-cols-1 gap-4 rounded-[12px] border border-[var(--color-accent)] bg-[var(--color-accent-soft)] p-4 sm:grid-cols-2">
+            <Field label={t("checkout.deliveryAddrPickup")} htmlFor="pickupAddr">
+              <Input
+                id="pickupAddr"
+                value={pickupAddress}
+                onChange={(e) => setPickupAddress(e.target.value)}
+                placeholder={t("checkout.deliveryAddrPlaceholder")}
+              />
+            </Field>
+            <Field label={t("checkout.deliveryAddrReturn")} htmlFor="returnAddr">
+              <Input
+                id="returnAddr"
+                value={returnAddress}
+                onChange={(e) => setReturnAddress(e.target.value)}
+                placeholder={t("checkout.deliveryAddrPlaceholder")}
+              />
+            </Field>
+            <p className="text-[12px] text-[var(--color-mute)] sm:col-span-2">
+              {t("checkout.deliveryAddrHint")}
+            </p>
+          </div>
+        )}
       </div>
 
       <div>

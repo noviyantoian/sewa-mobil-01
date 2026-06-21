@@ -130,6 +130,12 @@ export function BookingDetail({ vm }: { vm: BookingDetailVM }) {
         <Card title={t("admin.bkLocations")}>
           <Row label={t("admin.bkPickup")}>{vm.pickup ?? "—"}</Row>
           <Row label={t("admin.bkReturn")}>{vm.ret ?? "—"}</Row>
+          {vm.pickupAddress && (
+            <Row label={t("admin.bkPickupAddr")}>{vm.pickupAddress}</Row>
+          )}
+          {vm.returnAddress && (
+            <Row label={t("admin.bkReturnAddr")}>{vm.returnAddress}</Row>
+          )}
         </Card>
 
         <Card title={t("admin.bkPayment")}>

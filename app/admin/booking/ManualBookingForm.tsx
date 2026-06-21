@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR } from "@/lib/format";
 import { calcPrice } from "@/lib/pricing";
 import type { BookingMode } from "@/lib/db/schema";
-import { createManualBookingAction } from "./actions";
+import { createManualBookingAction, manualAvailabilityAction } from "./actions";
 
 export interface ManualCar {
   id: string;
@@ -20,6 +20,8 @@ export interface ManualCar {
   rateSelfDrive: number;
   rateWithDriver: number;
   deposit: number;
+  driverRequired: boolean;
+  trackUnits: boolean;
 }
 export interface ManualOption {
   id: string;
@@ -57,10 +59,13 @@ export function ManualBookingForm({
     customerPhone: "",
     pickupLocationId: "",
     returnLocationId: "",
+    pickupAddress: "",
+    returnAddress: "",
     driverId: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [units, setUnits] = useState<number | null>(null);
 
   const set =
     (k: keyof typeof f) =>
@@ -68,28 +73,57 @@ export function ManualBookingForm({
       setF((p) => ({ ...p, [k]: e.target.value }));
 
   const car = cars.find((c) => c.id === f.carId);
+  // Driver-mandatory cars cannot be self-driven — lock the mode to with-driver.
+  const driverLocked = !!car?.driverRequired;
+  const mode: BookingMode = driverLocked ? "withDriver" : f.mode;
+
   const preview = useMemo(() => {
     if (!car || !f.from || !f.to) return null;
     const fromAt = new Date(`${f.from}T08:00:00+07:00`);
     const toAt = new Date(`${f.to}T08:00:00+07:00`);
     if (Number.isNaN(fromAt.getTime()) || Number.isNaN(toAt.getTime()) || toAt <= fromAt)
       return null;
-    return calcPrice(car, f.mode, fromAt, toAt);
-  }, [car, f.from, f.to, f.mode]);
+    return calcPrice(car, mode, fromAt, toAt);
+  }, [car, f.from, f.to, mode]);
+
+  // Live remaining-units lookup. `null` when the model does not track units.
+  useEffect(() => {
+    if (!f.carId || !f.from || !f.to) {
+      setUnits(null);
+      return;
+    }
+    let active = true;
+    manualAvailabilityAction(f.carId, f.from, f.to)
+      .then((r) => {
+        if (active) setUnits(r.units);
+      })
+      .catch(() => {
+        if (active) setUnits(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [f.carId, f.from, f.to]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (driverLocked && !f.driverId) {
+      setError(t("admin.bkErrDriverRequired"));
+      return;
+    }
     setLoading(true);
     setError(null);
     const res = await createManualBookingAction({
       carId: f.carId,
-      mode: f.mode,
+      mode,
       from: f.from,
       to: f.to,
       customerName: f.customerName.trim(),
       customerPhone: f.customerPhone.trim(),
       pickupLocationId: f.pickupLocationId || undefined,
       returnLocationId: f.returnLocationId || undefined,
+      pickupAddress: f.pickupAddress.trim() || undefined,
+      returnAddress: f.returnAddress.trim() || undefined,
       driverId: f.driverId || undefined,
     });
     if (res.ok) {
@@ -104,7 +138,9 @@ export function ManualBookingForm({
         ? t("admin.bkErrDouble")
         : res.error === "car_not_found"
           ? t("admin.bkErrCarNotFound")
-          : t("admin.errFailed"),
+          : res.error === "driver_required"
+            ? t("admin.bkErrDriverRequired")
+            : t("admin.errFailed"),
     );
   };
 
@@ -138,7 +174,12 @@ export function ManualBookingForm({
             </Select>
           </Field>
           <Field label={t("admin.bkMode")} htmlFor="mode">
-            <Select id="mode" value={f.mode} onChange={set("mode")}>
+            <Select
+              id="mode"
+              value={mode}
+              onChange={set("mode")}
+              disabled={driverLocked}
+            >
               <option value="selfDrive">{t("admin.bkSelfDrive")}</option>
               <option value="withDriver">{t("admin.bkWithDriver")}</option>
             </Select>
@@ -150,6 +191,22 @@ export function ManualBookingForm({
             <Input id="to" type="date" value={f.to} onChange={set("to")} required />
           </Field>
         </div>
+        {driverLocked && (
+          <p className="mt-3 text-[13px] font-semibold text-[var(--color-primary)]">
+            {t("admin.bkDriverLocked")}
+          </p>
+        )}
+        {units !== null && (
+          <p
+            className={`mt-2 text-[13px] font-semibold ${
+              units > 0 ? "text-[var(--color-success)]" : "text-[var(--color-error)]"
+            }`}
+          >
+            {units > 0
+              ? t("admin.bkUnitsLeft", { n: units })
+              : t("admin.bkUnitsFull")}
+          </p>
+        )}
       </Section>
 
       <Section title={t("admin.customer")}>
@@ -185,8 +242,16 @@ export function ManualBookingForm({
               ))}
             </Select>
           </Field>
-          <Field label={t("admin.bkOptDriver")} htmlFor="driver">
-            <Select id="driver" value={f.driverId} onChange={set("driverId")}>
+          <Field
+            label={driverLocked ? t("admin.bkDriverReq") : t("admin.bkOptDriver")}
+            htmlFor="driver"
+          >
+            <Select
+              id="driver"
+              value={f.driverId}
+              onChange={set("driverId")}
+              required={driverLocked}
+            >
               <option value="">{t("admin.bkNone")}</option>
               {drivers.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -196,6 +261,26 @@ export function ManualBookingForm({
             </Select>
           </Field>
         </div>
+      </Section>
+
+      <Section title={t("admin.bkAddressSection")}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label={t("admin.bkPickupAddr")} htmlFor="pickupAddr">
+            <Input
+              id="pickupAddr"
+              value={f.pickupAddress}
+              onChange={set("pickupAddress")}
+            />
+          </Field>
+          <Field label={t("admin.bkReturnAddr")} htmlFor="returnAddr">
+            <Input
+              id="returnAddr"
+              value={f.returnAddress}
+              onChange={set("returnAddress")}
+            />
+          </Field>
+        </div>
+        <p className="mt-3 text-[12px] text-[var(--color-mute)]">{t("admin.bkAddrHint")}</p>
       </Section>
 
       {preview && (

@@ -22,6 +22,8 @@ export default async function NewBookingPage() {
     rateSelfDrive: c.rateSelfDrive,
     rateWithDriver: c.rateWithDriver,
     deposit: c.deposit,
+    driverRequired: c.driverRequired,
+    trackUnits: c.trackUnits,
   }));
   const driverOpts: ManualOption[] = drivers.map((d) => ({ id: d.id, label: d.name }));
   const locOpts: ManualOption[] = locations.map((l) => ({

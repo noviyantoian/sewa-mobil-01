@@ -9,7 +9,9 @@ import {
   updateDocumentStatus,
   getCarById,
   createBooking,
+  getAvailableUnits,
   DoubleBookingError,
+  DriverRequiredError,
 } from "@/lib/repo";
 import { calcPrice } from "@/lib/pricing";
 
@@ -35,12 +37,22 @@ const manualSchema = z.object({
   customerPhone: z.string().min(6).max(24),
   pickupLocationId: z.string().uuid().optional(),
   returnLocationId: z.string().uuid().optional(),
+  pickupAddress: z.string().max(300).optional(),
+  returnAddress: z.string().max(300).optional(),
   driverId: z.string().uuid().optional(),
 });
 
 export type ManualBookingResult =
   | { ok: true; code: string }
-  | { ok: false; error: "invalid" | "car_not_found" | "double_booking" | "failed" };
+  | {
+      ok: false;
+      error:
+        | "invalid"
+        | "car_not_found"
+        | "double_booking"
+        | "driver_required"
+        | "failed";
+    };
 
 export type BookingActionResult = { ok: true } | { ok: false; error: string };
 
@@ -120,10 +132,17 @@ export async function createManualBookingAction(
       return { ok: false, error: "invalid" };
     }
 
-    const price = calcPrice(car, d.mode, fromAt, toAt);
+    // Driver-mandatory cars can never be self-driven, and the admin must pick
+    // the driver manually (availability is checked by a human — never auto).
+    const mode = car.driverRequired ? "withDriver" : d.mode;
+    if (car.driverRequired && !d.driverId) {
+      return { ok: false, error: "driver_required" };
+    }
+
+    const price = calcPrice(car, mode, fromAt, toAt);
     const booking = await createBooking(tenantId, {
       carId: car.id,
-      mode: d.mode,
+      mode,
       from: fromAt,
       to: toAt,
       customerName: d.customerName,
@@ -132,6 +151,8 @@ export async function createManualBookingAction(
       deposit: price.deposit,
       pickupLocationId: d.pickupLocationId,
       returnLocationId: d.returnLocationId,
+      pickupAddress: d.pickupAddress,
+      returnAddress: d.returnAddress,
       driverId: d.driverId,
       channel: "web_wa",
     });
@@ -143,7 +164,47 @@ export async function createManualBookingAction(
     if (e instanceof DoubleBookingError) {
       return { ok: false, error: "double_booking" };
     }
+    if (e instanceof DriverRequiredError) {
+      return { ok: false, error: "driver_required" };
+    }
     console.error("[createManualBookingAction]", e);
     return { ok: false, error: "failed" };
+  }
+}
+
+/**
+ * Live availability lookup for the manual booking form. Returns the units still
+ * free for the window, or `null` when the car does not track units (always
+ * bookable — the form should hide the stock badge).
+ */
+export async function manualAvailabilityAction(
+  carId: string,
+  from: string,
+  to: string,
+): Promise<{ units: number | null }> {
+  try {
+    await requireAdmin();
+    if (
+      !idSchema.safeParse(carId).success ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(from) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(to)
+    ) {
+      return { units: null };
+    }
+    const fromAt = new Date(`${from}${DAY_START}`);
+    const toAt = new Date(`${to}${DAY_START}`);
+    if (
+      Number.isNaN(fromAt.getTime()) ||
+      Number.isNaN(toAt.getTime()) ||
+      toAt <= fromAt
+    ) {
+      return { units: null };
+    }
+    const tenantId = await getActiveTenantId();
+    const units = await getAvailableUnits(tenantId, carId, fromAt, toAt);
+    return { units };
+  } catch (e) {
+    console.error("[manualAvailabilityAction]", e);
+    return { units: null };
   }
 }

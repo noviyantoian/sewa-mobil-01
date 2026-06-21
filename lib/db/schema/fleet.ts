@@ -42,6 +42,16 @@ export const cars = pgTable(
     rateWithDriver: integer("rate_with_driver").notNull().default(0),
     deposit: integer("deposit").notNull().default(0),
     available: boolean("available").notNull().default(true),
+    /** Customer never sees plates — a model is an inventory of N identical units. */
+    unitCount: integer("unit_count").notNull().default(1),
+    /**
+     * When true, availability is enforced by stock: a model is bookable for a
+     * window only if `unit_count − overlapping bookings > 0`. When false (legacy
+     * default) the model always shows and the customer confirms manually.
+     */
+    trackUnits: boolean("track_units").notNull().default(false),
+    /** Cars that cannot be self-driven — booking is locked to with-driver mode. */
+    driverRequired: boolean("driver_required").notNull().default(false),
     features: jsonb("features").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     doors: integer("doors"),
     luggage: integer("luggage"),

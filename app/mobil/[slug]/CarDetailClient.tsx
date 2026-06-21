@@ -32,8 +32,10 @@ export function CarDetailClient({ car, similar }: { car: UiCar; similar: UiCar[]
   const search = useSearchParams();
   const t = useT();
 
+  // Driver-mandatory cars can never be self-driven — lock the mode.
+  const driverOnly = car.driverRequired;
   const [mode, setMode] = useState<Mode>(
-    search.get("mode") === "withDriver" ? "withDriver" : "selfDrive"
+    driverOnly || search.get("mode") === "withDriver" ? "withDriver" : "selfDrive"
   );
   const [from, setFrom] = useState(search.get("from") ?? addDays(1));
   const [to, setTo] = useState(search.get("to") ?? addDays(4));
@@ -51,10 +53,14 @@ export function CarDetailClient({ car, similar }: { car: UiCar; similar: UiCar[]
     `/checkout?slug=${car.slug}&mode=${mode}&from=${from}&to=${to}` +
     `&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`;
 
-  const modes: { m: Mode; icon: typeof SteeringWheel; label: string }[] = [
-    { m: "selfDrive", icon: SteeringWheel, label: t("hero.modeSelfDrive") },
-    { m: "withDriver", icon: UserCircle, label: t("hero.modeWithDriver") },
-  ];
+  const modes: { m: Mode; icon: typeof SteeringWheel; label: string }[] = (
+    driverOnly
+      ? [{ m: "withDriver" as Mode, icon: UserCircle, label: t("hero.modeWithDriver") }]
+      : [
+          { m: "selfDrive" as Mode, icon: SteeringWheel, label: t("hero.modeSelfDrive") },
+          { m: "withDriver" as Mode, icon: UserCircle, label: t("hero.modeWithDriver") },
+        ]
+  );
 
   return (
     <main className="bg-[var(--color-canvas-warm)] pb-20">
@@ -136,7 +142,7 @@ export function CarDetailClient({ car, similar }: { car: UiCar; similar: UiCar[]
 
         <aside>
           <div className="sticky top-24 rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 shadow-md">
-            <div role="tablist" aria-label={t("car.pricePerDay")} className="grid grid-cols-2 gap-1 rounded-[12px] bg-[var(--color-canvas-soft)] p-1">
+            <div role="tablist" aria-label={t("car.pricePerDay")} className={cn("grid gap-1 rounded-[12px] bg-[var(--color-canvas-soft)] p-1", driverOnly ? "grid-cols-1" : "grid-cols-2")}>
               {modes.map(({ m, icon: Icon, label }) => {
                 const active = mode === m;
                 return (

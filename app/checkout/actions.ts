@@ -14,6 +14,8 @@ const inputSchema = z.object({
   phone: z.string().min(8).max(24),
   email: z.string().email().optional(),
   addonsTotal: z.number().int().min(0).max(50_000_000).default(0),
+  pickupAddress: z.string().max(300).optional(),
+  returnAddress: z.string().max(300).optional(),
 });
 
 export type CreateBookingInput = z.infer<typeof inputSchema>;
@@ -34,7 +36,8 @@ export async function createBookingAction(
 ): Promise<CreateBookingResult> {
   const parsed = inputSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "invalid" };
-  const { slug, mode, from, to, fullName, phone, addonsTotal } = parsed.data;
+  const { slug, mode, from, to, fullName, phone, addonsTotal, pickupAddress, returnAddress } =
+    parsed.data;
 
   const tenantId = await getActiveTenantId();
   const car = await getCarBySlug(tenantId, slug);
@@ -58,6 +61,8 @@ export async function createBookingAction(
       customerPhone: phone,
       total: price.subtotal + addonsTotal,
       deposit: price.deposit,
+      pickupAddress,
+      returnAddress,
       channel: "web_wa",
     });
     return { ok: true, code: booking.code };

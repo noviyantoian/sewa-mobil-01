@@ -49,6 +49,8 @@ export interface BookingDetailVM {
   driverId: string | null;
   pickup: string | null; // "City — Area"
   ret: string | null;
+  pickupAddress: string | null; // customer delivery address
+  returnAddress: string | null;
   documents: { id: string; type: string; url: string; verifyStatus: string }[];
   drivers: { id: string; name: string }[]; // assignable
 }

@@ -35,6 +35,9 @@ export interface UiCar {
   rateWithDriver: number;
   deposit: number;
   available: boolean;
+  unitCount: number;
+  trackUnits: boolean;
+  driverRequired: boolean;
   features: string[];
   doors: number | null;
   luggage: number | null;
@@ -64,6 +67,9 @@ function toUiCar(row: CarRow, imgs: CarImage[]): UiCar {
     rateWithDriver: row.rateWithDriver,
     deposit: row.deposit,
     available: row.available,
+    unitCount: row.unitCount,
+    trackUnits: row.trackUnits,
+    driverRequired: row.driverRequired,
     features: row.features ?? [],
     doors: row.doors,
     luggage: row.luggage,
@@ -235,6 +241,9 @@ export interface CarInput {
   rateWithDriver: number;
   deposit: number;
   available: boolean;
+  unitCount?: number;
+  trackUnits?: boolean;
+  driverRequired?: boolean;
   features?: string[];
   doors?: number | null;
   luggage?: number | null;
@@ -273,6 +282,9 @@ function carColumns(input: CarInput) {
     rateWithDriver: input.rateWithDriver,
     deposit: input.deposit,
     available: input.available,
+    unitCount: Math.max(1, Math.trunc(input.unitCount ?? 1)),
+    trackUnits: input.trackUnits ?? false,
+    driverRequired: input.driverRequired ?? false,
     features: input.features ?? [],
     doors: input.doors ?? null,
     luggage: input.luggage ?? null,

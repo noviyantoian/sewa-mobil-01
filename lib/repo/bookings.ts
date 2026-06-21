@@ -12,7 +12,7 @@ import {
   type PickupType,
   type VerifyStatus,
 } from "@/lib/db/schema";
-import { isCarAvailable } from "@/lib/availability";
+import { availableUnitCount, isCarAvailable } from "@/lib/availability";
 
 export type BookingRow = typeof bookings.$inferSelect;
 
@@ -27,17 +27,27 @@ export interface CreateBookingInput {
   deposit: number;
   pickupLocationId?: string;
   returnLocationId?: string;
+  pickupAddress?: string;
+  returnAddress?: string;
   pickupType?: PickupType;
   channel?: BookingChannel;
   driverId?: string;
   userId?: string;
 }
 
-/** Thrown when the requested window overlaps an existing blocking booking. */
+/** Thrown when no unit is free for the requested window (count-based). */
 export class DoubleBookingError extends Error {
   constructor(public readonly carId: string) {
     super("Car is already booked for the selected dates");
     this.name = "DoubleBookingError";
+  }
+}
+
+/** Thrown when a driver-mandatory car is booked in self-drive mode. */
+export class DriverRequiredError extends Error {
+  constructor(public readonly carId: string) {
+    super("This car can only be booked with a driver");
+    this.name = "DriverRequiredError";
   }
 }
 
@@ -200,6 +210,22 @@ export async function updateDocumentStatus(
   });
 }
 
+/**
+ * Units still free for a window. Returns `null` when the model does not track
+ * units (admin display should hide the stock badge in that case).
+ */
+export async function getAvailableUnits(
+  tenantId: string,
+  carId: string,
+  from: Date,
+  to: Date,
+): Promise<number | null> {
+  return withTenant(tenantId, async (tx) => {
+    const n = await availableUnitCount(tx, carId, from, to);
+    return Number.isFinite(n) ? n : null;
+  });
+}
+
 /** Per-tenant booking code: FK-YY-NNNN. count() is RLS-scoped to this tenant. */
 async function nextBookingCode(tx: Tx): Promise<string> {
   const [{ n }] = await tx.select({ n: count() }).from(bookings);
@@ -223,6 +249,18 @@ export async function createBooking(
     // Released automatically at transaction end; pgBouncer-safe (xact-scoped).
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${tenantId}))`);
 
+    // Driver-mandatory cars can never be self-driven, whoever creates the
+    // booking. The admin still assigns the actual driver manually afterwards
+    // (we never auto-assign — availability must be checked by a human).
+    const [carRow] = await tx
+      .select({ driverRequired: cars.driverRequired })
+      .from(cars)
+      .where(eq(cars.id, input.carId))
+      .limit(1);
+    if (carRow?.driverRequired && input.mode === "selfDrive") {
+      throw new DriverRequiredError(input.carId);
+    }
+
     const available = await isCarAvailable(
       tx,
       input.carId,
@@ -244,6 +282,8 @@ export async function createBooking(
         customerPhone: input.customerPhone,
         pickupLocationId: input.pickupLocationId,
         returnLocationId: input.returnLocationId,
+        pickupAddress: input.pickupAddress?.trim() || null,
+        returnAddress: input.returnAddress?.trim() || null,
         mode: input.mode,
         pickupType: input.pickupType ?? "office",
         channel: input.channel ?? "web_wa",

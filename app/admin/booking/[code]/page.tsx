@@ -40,6 +40,8 @@ export default async function BookingDetailPage({
     driverId: b.driverId,
     pickup: loc(detail.pickup),
     ret: loc(detail.ret),
+    pickupAddress: b.pickupAddress ?? null,
+    returnAddress: b.returnAddress ?? null,
     documents: detail.documents,
     drivers: drivers.map((d) => ({ id: d.id, name: d.name })),
   };
