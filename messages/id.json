@@ -388,6 +388,10 @@
     "fArea": "Area / cabang",
     "fType": "Tipe lokasi",
     "errLocationInUse": "Lokasi dipakai booking, tak bisa dihapus.",
+    "imgDrop": "Seret foto ke sini atau klik untuk unggah",
+    "imgUploading": "Mengunggah…",
+    "imgError": "Gagal unggah. Maks 5MB, format JPG/PNG/WebP.",
+    "imgRemove": "Hapus foto",
     "exp": "thn pengalaman"
   },
   "howPage": {

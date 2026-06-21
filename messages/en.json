@@ -388,6 +388,10 @@
     "fArea": "Area / branch",
     "fType": "Location type",
     "errLocationInUse": "Location is used by bookings, cannot delete.",
+    "imgDrop": "Drag a photo here or click to upload",
+    "imgUploading": "Uploading…",
+    "imgError": "Upload failed. Max 5MB, JPG/PNG/WebP.",
+    "imgRemove": "Remove photo",
     "exp": "yrs experience"
   },
   "howPage": {
