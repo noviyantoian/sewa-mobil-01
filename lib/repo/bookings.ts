@@ -2,10 +2,15 @@ import { count, desc, eq, sql } from "drizzle-orm";
 import { withTenant, type Tx } from "@/lib/db";
 import {
   bookings,
+  cars,
+  drivers,
+  locations,
+  documents,
   type BookingChannel,
   type BookingMode,
   type BookingStatus,
   type PickupType,
+  type VerifyStatus,
 } from "@/lib/db/schema";
 import { isCarAvailable } from "@/lib/availability";
 
@@ -83,6 +88,101 @@ export async function getBookingByCode(
       .where(eq(bookings.code, code))
       .limit(1);
     return row ?? null;
+  });
+}
+
+export interface BookingDocument {
+  id: string;
+  type: string;
+  url: string;
+  verifyStatus: string;
+}
+
+export interface BookingDetail {
+  booking: BookingRow;
+  car: { id: string; slug: string; name: string; brand: string } | null;
+  driver: { id: string; name: string } | null;
+  pickup: { city: string; area: string } | null;
+  ret: { city: string; area: string } | null;
+  documents: BookingDocument[];
+}
+
+/** Full booking view for the admin detail page (car/driver/locations/docs). */
+export async function getBookingDetail(
+  tenantId: string,
+  code: string,
+): Promise<BookingDetail | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [b] = await tx
+      .select()
+      .from(bookings)
+      .where(eq(bookings.code, code))
+      .limit(1);
+    if (!b) return null;
+
+    const car = b.carId
+      ? ((
+          await tx
+            .select({ id: cars.id, slug: cars.slug, name: cars.name, brand: cars.brand })
+            .from(cars)
+            .where(eq(cars.id, b.carId))
+            .limit(1)
+        )[0] ?? null)
+      : null;
+    const driver = b.driverId
+      ? ((
+          await tx
+            .select({ id: drivers.id, name: drivers.name })
+            .from(drivers)
+            .where(eq(drivers.id, b.driverId))
+            .limit(1)
+        )[0] ?? null)
+      : null;
+    const pickup = b.pickupLocationId
+      ? ((
+          await tx
+            .select({ city: locations.city, area: locations.area })
+            .from(locations)
+            .where(eq(locations.id, b.pickupLocationId))
+            .limit(1)
+        )[0] ?? null)
+      : null;
+    const ret = b.returnLocationId
+      ? ((
+          await tx
+            .select({ city: locations.city, area: locations.area })
+            .from(locations)
+            .where(eq(locations.id, b.returnLocationId))
+            .limit(1)
+        )[0] ?? null)
+      : null;
+    const docs = await tx
+      .select({
+        id: documents.id,
+        type: documents.type,
+        url: documents.url,
+        verifyStatus: documents.verifyStatus,
+      })
+      .from(documents)
+      .where(eq(documents.bookingId, b.id));
+
+    return { booking: b, car, driver, pickup, ret, documents: docs };
+  });
+}
+
+/** Approve/reject an uploaded identity document. */
+export async function updateDocumentStatus(
+  tenantId: string,
+  docId: string,
+  status: VerifyStatus,
+): Promise<boolean> {
+  return withTenant(tenantId, async (tx) => {
+    const [row] = await tx
+      .update(documents)
+      .set({ verifyStatus: status })
+      .where(eq(documents.id, docId))
+      .returning({ id: documents.id });
+    return !!row;
   });
 }
 

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Key, SteeringWheel } from "@phosphor-icons/react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
@@ -40,7 +41,14 @@ export function BookingClient({ bookings }: { bookings: AdminBooking[] }) {
     {
       key: "id",
       header: "#",
-      render: (b) => <span className="tnum text-[13px] font-semibold text-[var(--color-mute)]">{b.id}</span>,
+      render: (b) => (
+        <Link
+          href={`/admin/booking/${encodeURIComponent(b.id)}`}
+          className="tnum text-[13px] font-semibold text-[var(--color-accent)] hover:underline"
+        >
+          {b.id}
+        </Link>
+      ),
     },
     {
       key: "customer",

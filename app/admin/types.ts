@@ -31,3 +31,24 @@ export interface AdminDriver {
   city: string;
   experienceYears: number;
 }
+
+export interface BookingDetailVM {
+  code: string; // human code (FK-26-0001)
+  bookingId: string; // DB uuid
+  status: BookingStatus;
+  mode: "selfDrive" | "withDriver";
+  channel: string;
+  customerName: string;
+  customerPhone: string;
+  fromAt: string; // ISO
+  toAt: string; // ISO
+  createdAt: string; // ISO
+  total: number;
+  deposit: number;
+  car: { id: string; slug: string; name: string; brand: string } | null;
+  driverId: string | null;
+  pickup: string | null; // "City — Area"
+  ret: string | null;
+  documents: { id: string; type: string; url: string; verifyStatus: string }[];
+  drivers: { id: string; name: string }[]; // assignable
+}
