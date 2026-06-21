@@ -183,3 +183,99 @@ export async function listDrivers(tenantId: string): Promise<DriverRow[]> {
     tx.select().from(drivers).orderBy(asc(drivers.name)),
   );
 }
+
+// ── Writes (admin CMS) ───────────────────────────────────────────────────────
+
+export interface CarImageInput {
+  exterior?: string;
+  side?: string;
+  interior?: string;
+}
+
+export interface CarInput {
+  slug: string;
+  name: string;
+  brand: string;
+  category: CarCategory;
+  color?: string;
+  capacity: number;
+  transmission: CarTransmission;
+  fuel?: string;
+  year?: number;
+  rateSelfDrive: number;
+  rateWithDriver: number;
+  deposit: number;
+  available: boolean;
+  images?: CarImageInput;
+}
+
+/** Insert exterior/side/interior image rows for a car (skips blanks). */
+async function writeCarImages(
+  tx: Tx,
+  tenantId: string,
+  carId: string,
+  images?: CarImageInput,
+): Promise<void> {
+  if (!images) return;
+  const kinds = ["exterior", "side", "interior"] as const;
+  const rows = kinds
+    .map((kind) => ({ kind, url: images[kind]?.trim() }))
+    .filter((r): r is { kind: (typeof kinds)[number]; url: string } => !!r.url)
+    .map((r, sort) => ({ tenantId, carId, url: r.url, kind: r.kind, sort }));
+  if (rows.length > 0) await tx.insert(carImages).values(rows);
+}
+
+function carColumns(input: CarInput) {
+  return {
+    slug: input.slug,
+    name: input.name,
+    brand: input.brand,
+    category: input.category,
+    color: input.color?.trim() || null,
+    capacity: input.capacity,
+    transmission: input.transmission,
+    fuel: input.fuel?.trim() || null,
+    year: input.year ?? null,
+    rateSelfDrive: input.rateSelfDrive,
+    rateWithDriver: input.rateWithDriver,
+    deposit: input.deposit,
+    available: input.available,
+  };
+}
+
+export async function createCar(tenantId: string, input: CarInput): Promise<UiCar> {
+  return withTenant(tenantId, async (tx) => {
+    const [car] = await tx
+      .insert(cars)
+      .values({ tenantId, ...carColumns(input) })
+      .returning();
+    await writeCarImages(tx, tenantId, car.id, input.images);
+    const imgMap = await imagesByCar(tx, [car.id]);
+    return toUiCar(car, imgMap.get(car.id) ?? []);
+  });
+}
+
+export async function updateCar(
+  tenantId: string,
+  id: string,
+  input: CarInput,
+): Promise<UiCar | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [car] = await tx
+      .update(cars)
+      .set(carColumns(input))
+      .where(eq(cars.id, id))
+      .returning();
+    if (!car) return null;
+    if (input.images) {
+      await tx.delete(carImages).where(eq(carImages.carId, id));
+      await writeCarImages(tx, tenantId, id, input.images);
+    }
+    const imgMap = await imagesByCar(tx, [id]);
+    return toUiCar(car, imgMap.get(id) ?? []);
+  });
+}
+
+export async function deleteCar(tenantId: string, id: string): Promise<void> {
+  await withTenant(tenantId, (tx) => tx.delete(cars).where(eq(cars.id, id)));
+}
