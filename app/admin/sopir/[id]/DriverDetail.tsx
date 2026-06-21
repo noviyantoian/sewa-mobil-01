@@ -30,7 +30,7 @@ export function DriverDetail({
     <div className="flex flex-col gap-6">
       <DriverForm driverId={driverId} initial={initial} />
 
-      <section className="card shadow-sm">
+      <section className="card shadow-sm p-6">
         <h2 className="mb-3 text-[15px] font-bold uppercase tracking-[0.08em] text-[var(--color-mute)]">
           {t("admin.driverAssignedBookings")}
         </h2>

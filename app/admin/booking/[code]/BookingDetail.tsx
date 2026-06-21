@@ -36,7 +36,7 @@ const verifyColor: Record<string, string> = {
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="card shadow-sm">
+    <section className="card shadow-sm p-6">
       <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-[var(--color-mute)]">
         {title}
       </h2>
