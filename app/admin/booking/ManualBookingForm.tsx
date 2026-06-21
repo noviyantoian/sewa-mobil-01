@@ -6,8 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/ui/Input";
-import { selectClass } from "@/components/admin/formStyles";
+import { Field, Input, Select } from "@/components/ui/Input";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR } from "@/lib/format";
 import { calcPrice } from "@/lib/pricing";
@@ -130,19 +129,19 @@ export function ManualBookingForm({
       <Section title={t("admin.car")}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label={t("admin.bkSelectCar")} htmlFor="car">
-            <select id="car" value={f.carId} onChange={set("carId")} className={selectClass} required>
+            <Select id="car" value={f.carId} onChange={set("carId")} required>
               {cars.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.brand} {c.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label={t("admin.bkMode")} htmlFor="mode">
-            <select id="mode" value={f.mode} onChange={set("mode")} className={selectClass}>
+            <Select id="mode" value={f.mode} onChange={set("mode")}>
               <option value="selfDrive">{t("admin.bkSelfDrive")}</option>
               <option value="withDriver">{t("admin.bkWithDriver")}</option>
-            </select>
+            </Select>
           </Field>
           <Field label={t("admin.bkFrom")} htmlFor="from">
             <Input id="from" type="date" value={f.from} onChange={set("from")} required />
@@ -167,34 +166,34 @@ export function ManualBookingForm({
       <Section title={t("admin.bkLocations")}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label={t("admin.bkPickupLoc")} htmlFor="pickup">
-            <select id="pickup" value={f.pickupLocationId} onChange={set("pickupLocationId")} className={selectClass}>
+            <Select id="pickup" value={f.pickupLocationId} onChange={set("pickupLocationId")}>
               <option value="">{t("admin.bkNone")}</option>
               {locations.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label={t("admin.bkReturnLoc")} htmlFor="ret">
-            <select id="ret" value={f.returnLocationId} onChange={set("returnLocationId")} className={selectClass}>
+            <Select id="ret" value={f.returnLocationId} onChange={set("returnLocationId")}>
               <option value="">{t("admin.bkNone")}</option>
               {locations.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label={t("admin.bkOptDriver")} htmlFor="driver">
-            <select id="driver" value={f.driverId} onChange={set("driverId")} className={selectClass}>
+            <Select id="driver" value={f.driverId} onChange={set("driverId")}>
               <option value="">{t("admin.bkNone")}</option>
               {drivers.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
         </div>
       </Section>

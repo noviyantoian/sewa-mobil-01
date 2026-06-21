@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, type FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { LockSimple } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +11,6 @@ import { useT } from "@/lib/i18n/I18nProvider";
 
 function LoginForm() {
   const t = useT();
-  const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,21 +21,28 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    if (authError) {
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (authError) {
+        setError(t("admin.loginError"));
+        setLoading(false);
+        return;
+      }
+      const dest = params.get("redirect") ?? "/admin";
+      // Only allow internal same-origin paths (no open redirect to //evil.com).
+      const safe = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/admin";
+      // Full navigation (not router.replace) so the fresh auth cookie reaches the
+      // middleware on the next request — avoids the "stuck loading" redirect race.
+      window.location.assign(safe);
+    } catch {
+      // Misconfigured Supabase env or network error — never leave the button spinning.
       setError(t("admin.loginError"));
       setLoading(false);
-      return;
     }
-    const dest = params.get("redirect") ?? "/admin";
-    // Only allow internal same-origin paths (no open redirect to //evil.com).
-    const safe = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/admin";
-    router.replace(safe);
-    router.refresh();
   };
 
   return (

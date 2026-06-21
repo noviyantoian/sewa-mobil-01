@@ -6,15 +6,12 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { toast } from "sonner";
 import { X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/ui/Input";
+import { Field, Input, Select } from "@/components/ui/Input";
 import { useT } from "@/lib/i18n/I18nProvider";
 import type { LocationRow } from "@/lib/repo";
 import { createLocationAction, updateLocationAction } from "./actions";
 
 const TYPES = ["office", "airport", "hotel", "other"] as const;
-
-const selectClass =
-  "w-full cursor-pointer appearance-none rounded-[10px] border border-[var(--color-hairline-strong)] bg-[var(--color-canvas)] px-3 py-2.5 text-[14px] capitalize text-[var(--color-ink)] outline-none transition-colors focus:border-[var(--color-accent)]";
 
 export function LocationFormDialog({
   open,
@@ -79,13 +76,13 @@ export function LocationFormDialog({
               <Input id="larea" value={area} onChange={(e) => setArea(e.target.value)} required />
             </Field>
             <Field label={t("admin.fType")} htmlFor="ltype">
-              <select id="ltype" value={type} onChange={(e) => setType(e.target.value)} className={selectClass}>
+              <Select id="ltype" value={type} onChange={(e) => setType(e.target.value)} className="capitalize">
                 {TYPES.map((ty) => (
                   <option key={ty} value={ty}>
                     {ty}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
 
             {error && (
