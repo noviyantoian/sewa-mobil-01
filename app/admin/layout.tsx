@@ -6,7 +6,7 @@
 // indexing) or move noindex to middleware / a server route group wrapper.
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
   Gauge,
@@ -15,13 +15,16 @@ import {
   ListChecks,
   IdentificationCard,
   SteeringWheel,
+  MapPin,
   List,
   X,
   ArrowSquareOut,
+  SignOut,
 } from "@phosphor-icons/react";
 import { Logo } from "@/components/layout/Logo";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/format";
+import { createClient } from "@/lib/supabase/client";
 
 type NavItem = {
   href: string;
@@ -36,12 +39,23 @@ const nav: NavItem[] = [
   { href: "/admin/booking", key: "admin.navBookings", icon: <ListChecks size={20} /> },
   { href: "/admin/verifikasi", key: "admin.navVerification", icon: <IdentificationCard size={20} /> },
   { href: "/admin/sopir", key: "admin.navDrivers", icon: <SteeringWheel size={20} /> },
+  { href: "/admin/lokasi", key: "admin.navLocations", icon: <MapPin size={20} /> },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const t = useT();
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  const logout = async () => {
+    await createClient().auth.signOut();
+    router.replace("/admin/login");
+    router.refresh();
+  };
+
+  // Login page renders bare (no admin shell — user isn't authenticated yet).
+  if (pathname === "/admin/login") return <>{children}</>;
 
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
@@ -96,13 +110,23 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {navList}
 
-      <Link
-        href="/"
-        className="mt-auto flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-[13px] font-semibold text-[var(--color-on-dark-soft)] transition-colors hover:bg-white/10 hover:text-white"
-      >
-        <ArrowSquareOut size={17} />
-        FolkaDrive
-      </Link>
+      <div className="mt-auto flex flex-col gap-1">
+        <Link
+          href="/"
+          className="flex items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-[13px] font-semibold text-[var(--color-on-dark-soft)] transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <ArrowSquareOut size={17} />
+          FolkaDrive
+        </Link>
+        <button
+          type="button"
+          onClick={logout}
+          className="flex cursor-pointer items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-[13px] font-semibold text-[var(--color-on-dark-soft)] transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <SignOut size={17} />
+          {t("admin.logout")}
+        </button>
+      </div>
     </div>
   );
 

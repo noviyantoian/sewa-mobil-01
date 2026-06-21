@@ -10,6 +10,7 @@ import {
   type Icon,
 } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { asset } from "@/lib/asset";
 import { cn } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
@@ -35,7 +36,7 @@ export function HowItWorks() {
             <div className="relative mt-8 overflow-hidden rounded-[20px] border border-[var(--color-hairline)]">
               <div className="relative aspect-[16/10] sm:aspect-[4/3]">
                 <Image
-                  src="/images/how-2-pickup.webp"
+                  src={asset("/images/how-2-pickup.webp")}
                   alt={t("how.step3Title")}
                   fill
                   sizes="(max-width: 1024px) 100vw, 40vw"

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { asset } from "@/lib/asset";
 import { categoryColor } from "@/components/ui/Badge";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -42,7 +43,7 @@ export function Categories() {
                 className="group relative flex h-full min-h-[260px] flex-col justify-end overflow-hidden rounded-[20px] border border-[var(--color-hairline)] p-6 transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-[var(--color-hairline-strong)] hover:shadow-lg focus-visible:-translate-y-1"
               >
                 <Image
-                  src={c.image}
+                  src={asset(c.image)}
                   alt={t(`categories.${c.key}Name`)}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"

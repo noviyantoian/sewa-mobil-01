@@ -1,13 +1,12 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
 /**
- * Keep admin/ops surfaces out of search indexes via response header.
- * The admin shell is a client component and cannot export `metadata`,
- * so noindex is enforced here at the edge instead.
+ * Gate `/admin` behind Supabase Auth (redirect unauthenticated to login) and
+ * keep admin surfaces out of search indexes.
  */
-export function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+export async function middleware(req: NextRequest) {
+  const res = await updateSession(req);
   if (req.nextUrl.pathname.startsWith("/admin")) {
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
   }

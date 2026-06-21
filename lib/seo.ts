@@ -1,4 +1,5 @@
 import type { Car } from "@/lib/mock/cars";
+import { asset } from "@/lib/asset";
 
 /** Business NAP + brand constants. Single source of truth for SEO. */
 export const SITE = {
@@ -20,7 +21,7 @@ export const SITE = {
   openingHours: "Mo-Su 06:00-23:00",
   sameAs: [] as string[],
   aggregateRating: { ratingValue: 4.9, reviewCount: 2400 },
-  ogImage: "/images/og-default.webp",
+  ogImage: asset("/images/og-default.webp"),
 } as const;
 
 /** Prefix a site-relative path with the absolute origin. */

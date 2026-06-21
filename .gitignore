@@ -29,9 +29,10 @@ yarn-error.log*
 pnpm-debug.log*
 .pnpm-store
 
-# local env
-.env*.local
+# local env — ignore every .env variant, keep the committed template
 .env
+.env.*
+!.env.example
 
 # vercel
 .vercel
