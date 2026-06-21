@@ -40,6 +40,14 @@ export interface AdminUnit {
     driverName: string | null;
     toAt: string;
   } | null;
+  events: {
+    id: string;
+    fromStatus: string | null;
+    toStatus: string;
+    note: string | null;
+    actor: string | null;
+    createdAt: string; // ISO
+  }[];
 }
 
 export interface AdminDriver {

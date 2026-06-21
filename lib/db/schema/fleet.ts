@@ -107,6 +107,28 @@ export const carUnits = pgTable("car_units", {
   createdAt: createdAt(),
 });
 
+/**
+ * Append-only audit log of manual unit status changes (send to service, mark
+ * done, etc.). Records the deciding admin (`actor`), a free-text note, and the
+ * from→to states so the history is trustworthy evidence (anti-fraud). Never
+ * updated or deleted.
+ */
+export const unitEvents = pgTable("unit_events", {
+  id: pk(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  carUnitId: uuid("car_unit_id")
+    .notNull()
+    .references(() => carUnits.id, { onDelete: "cascade" }),
+  action: text("action").notNull().default("status_change"),
+  fromStatus: text("from_status"),
+  toStatus: text("to_status").notNull(),
+  note: text("note"),
+  actor: text("actor"),
+  createdAt: createdAt(),
+});
+
 /** Drivers for with-driver mode. Mirrors lib/mock/drivers.ts. */
 export const drivers = pgTable("drivers", {
   id: pk(),

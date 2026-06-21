@@ -10,16 +10,22 @@ import {
   Trash,
   DotsThreeVertical,
   CaretDown,
+  Wrench,
+  CheckCircle,
+  ClockCounterClockwise,
 } from "@phosphor-icons/react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { CarCell } from "@/components/admin/CarCell";
 import { Button } from "@/components/ui/Button";
 import { Badge, categoryColor } from "@/components/ui/Badge";
+import { Field, Textarea } from "@/components/ui/Input";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR, cn } from "@/lib/format";
 import type { UiCar } from "@/lib/repo";
 import type { AdminUnit } from "../types";
-import { deleteCarAction } from "./actions";
+import { deleteCarAction, updateUnitStatusAction } from "./actions";
+
+type UnitStatus = "available" | "maintenance";
 
 const catLabel: Record<UiCar["category"], string> = {
   mpv: "MPV",
@@ -59,6 +65,12 @@ export function ArmadaClient({
   const [deleting, setDeleting] = useState<UiCar | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [statusTarget, setStatusTarget] = useState<{
+    unit: AdminUnit;
+    to: UnitStatus;
+  } | null>(null);
+  const [note, setNote] = useState("");
+  const [statusBusy, setStatusBusy] = useState(false);
 
   const unitsByCar = new Map<string, AdminUnit[]>();
   for (const u of unitList) {
@@ -76,6 +88,39 @@ export function ArmadaClient({
 
   const openCreate = () => router.push("/admin/armada/baru");
   const openEdit = (c: UiCar) => router.push(`/admin/armada/${c.id}`);
+
+  const statusLabel = (s: string) =>
+    s === "maintenance"
+      ? t("admin.unitMaintenance")
+      : s === "available"
+        ? t("admin.unitAvailable")
+        : s;
+
+  const openStatus = (unit: AdminUnit, to: UnitStatus) => {
+    setNote("");
+    setStatusTarget({ unit, to });
+  };
+
+  const submitStatus = async () => {
+    if (!statusTarget || note.trim().length < 2) return;
+    setStatusBusy(true);
+    const res = await updateUnitStatusAction(statusTarget.unit.id, {
+      status: statusTarget.to,
+      note,
+    });
+    setStatusBusy(false);
+    if (res.ok) {
+      toast.success(
+        res.by
+          ? `${t("admin.unitStatusUpdated")} · ${res.by}`
+          : t("admin.unitStatusUpdated"),
+      );
+      setStatusTarget(null);
+      router.refresh();
+    } else {
+      toast.error(t("admin.errFailed"));
+    }
+  };
 
   const confirmDelete = async () => {
     if (!deleting) return;
@@ -184,24 +229,71 @@ export function ArmadaClient({
           {list.map((u) => (
             <li
               key={u.id}
-              className="flex flex-wrap items-center gap-3 border-t border-[var(--color-hairline)] py-2.5 first:border-t-0 first:pt-0"
+              className="flex flex-col gap-2 border-t border-[var(--color-hairline)] py-3 first:border-t-0 first:pt-0"
             >
-              <span className="tnum w-32 font-bold text-[var(--color-ink)]">{u.plate}</span>
-              <span className="flex-1 text-[13px] text-[var(--color-body)]">
-                {u.label || <span className="text-[var(--color-mute)]">—</span>}
-                {u.running && u.booking && (
-                  <span className="ml-2 text-[12px] text-[var(--color-mute)]">
-                    · {u.booking.customerName ?? "—"}
-                    {u.booking.driverName ? ` · ${u.booking.driverName}` : ""}
-                  </span>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="tnum w-32 font-bold text-[var(--color-ink)]">{u.plate}</span>
+                <span className="flex-1 text-[13px] text-[var(--color-body)]">
+                  {u.label || <span className="text-[var(--color-mute)]">—</span>}
+                  {u.running && u.booking && (
+                    <span className="ml-2 text-[12px] text-[var(--color-mute)]">
+                      · {u.booking.customerName ?? "—"}
+                      {u.booking.driverName ? ` · ${u.booking.driverName}` : ""}
+                    </span>
+                  )}
+                </span>
+                {u.running ? (
+                  <Badge tone="warning">{t("admin.unitRunning")}</Badge>
+                ) : u.status === "maintenance" ? (
+                  <Badge tone="neutral">{t("admin.unitMaintenance")}</Badge>
+                ) : (
+                  <Badge tone="success">{t("admin.unitAvailable")}</Badge>
                 )}
-              </span>
-              {u.running ? (
-                <Badge tone="warning">{t("admin.unitRunning")}</Badge>
-              ) : u.status === "maintenance" ? (
-                <Badge tone="neutral">{t("admin.unitMaintenance")}</Badge>
-              ) : (
-                <Badge tone="success">{t("admin.unitAvailable")}</Badge>
+                {/* Quick action — change status without opening the detail page. */}
+                {u.running ? (
+                  <span className="text-[12px] text-[var(--color-mute)]">
+                    {t("admin.unitRunningLock")}
+                  </span>
+                ) : u.status === "available" ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2.5 text-[var(--color-warning)]"
+                    onClick={() => openStatus(u, "maintenance")}
+                  >
+                    <Wrench size={15} weight="bold" /> {t("admin.unitToService")}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2.5 text-[var(--color-success)]"
+                    onClick={() => openStatus(u, "available")}
+                  >
+                    <CheckCircle size={15} weight="bold" /> {t("admin.unitMarkDone")}
+                  </Button>
+                )}
+              </div>
+
+              {/* Audit trail: every status change with who + when + note. */}
+              {u.events.length > 0 && (
+                <ul className="ml-1 flex flex-col gap-1 border-l-2 border-[var(--color-hairline)] pl-3">
+                  {u.events.map((ev) => (
+                    <li key={ev.id} className="text-[12px] text-[var(--color-mute)]">
+                      <span className="inline-flex items-center gap-1 font-semibold text-[var(--color-body)]">
+                        <ClockCounterClockwise size={12} weight="bold" />
+                        {statusLabel(ev.toStatus)}
+                      </span>
+                      {" · "}
+                      {ev.actor ?? "—"}
+                      {" · "}
+                      <span className="tnum">{ev.createdAt.slice(0, 10)}</span>
+                      {ev.note && (
+                        <span className="text-[var(--color-body)]"> — {ev.note}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               )}
             </li>
           ))}
@@ -272,6 +364,61 @@ export function ArmadaClient({
               </Button>
               <Button variant="primary" size="md" loading={deleteLoading} onClick={confirmDelete}>
                 {t("admin.delete")}
+              </Button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Unit status change — mandatory note, logged to the audit trail. */}
+      <Dialog.Root
+        open={!!statusTarget}
+        onOpenChange={(o) => !o && setStatusTarget(null)}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 shadow-xl">
+            <Dialog.Title className="text-[18px] font-bold tracking-[-0.01em] text-[var(--color-ink)]">
+              {statusTarget?.to === "maintenance"
+                ? t("admin.unitToServiceTitle")
+                : t("admin.unitMarkDoneTitle")}
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-[14px] text-[var(--color-body-mid)]">
+              {statusTarget ? `${statusTarget.unit.plate} · ${statusTarget.unit.carName}` : ""}
+            </Dialog.Description>
+            <div className="mt-5">
+              <Field
+                label={
+                  statusTarget?.to === "maintenance"
+                    ? t("admin.noteService")
+                    : t("admin.noteDone")
+                }
+                htmlFor="unit-note"
+              >
+                <Textarea
+                  id="unit-note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder={
+                    statusTarget?.to === "maintenance"
+                      ? t("admin.noteServiceHint")
+                      : t("admin.noteDoneHint")
+                  }
+                />
+              </Field>
+            </div>
+            <div className="mt-6 flex justify-end gap-2.5">
+              <Button variant="secondary" size="md" onClick={() => setStatusTarget(null)}>
+                {t("admin.cancel")}
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                loading={statusBusy}
+                disabled={note.trim().length < 2}
+                onClick={submitStatus}
+              >
+                {t("admin.save")}
               </Button>
             </div>
           </Dialog.Content>

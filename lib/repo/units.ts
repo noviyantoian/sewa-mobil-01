@@ -1,14 +1,28 @@
-import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { withTenant } from "@/lib/db";
 import {
   bookings,
   carUnits,
   cars,
   drivers,
+  unitEvents,
   type CarUnitStatus,
 } from "@/lib/db/schema";
 
 export type CarUnitRow = typeof carUnits.$inferSelect;
+
+/** One audit-log entry for a unit status change. */
+export interface UnitEventView {
+  id: string;
+  fromStatus: string | null;
+  toStatus: string;
+  note: string | null;
+  actor: string | null;
+  createdAt: string;
+}
+
+/** Most recent events surfaced inline per unit (full history via listUnitEvents). */
+const INLINE_EVENT_LIMIT = 5;
 
 /** A unit's live booking, when one is currently out (confirmed/active). */
 export interface UnitBooking {
@@ -32,6 +46,7 @@ export interface UnitView {
   status: CarUnitStatus;
   running: boolean;
   booking: UnitBooking | null;
+  events: UnitEventView[];
 }
 
 /** Bookings that occupy a unit right now (admin assigned a plate to them). */
@@ -75,6 +90,35 @@ export async function listUnitViews(tenantId: string): Promise<UnitView[]> {
 
     const byUnit = new Map(active.map((a) => [a.carUnitId as string, a]));
 
+    const eventRows = await tx
+      .select({
+        id: unitEvents.id,
+        carUnitId: unitEvents.carUnitId,
+        fromStatus: unitEvents.fromStatus,
+        toStatus: unitEvents.toStatus,
+        note: unitEvents.note,
+        actor: unitEvents.actor,
+        createdAt: unitEvents.createdAt,
+      })
+      .from(unitEvents)
+      .orderBy(desc(unitEvents.createdAt));
+
+    const eventsByUnit = new Map<string, UnitEventView[]>();
+    for (const e of eventRows) {
+      const list = eventsByUnit.get(e.carUnitId) ?? [];
+      if (list.length < INLINE_EVENT_LIMIT) {
+        list.push({
+          id: e.id,
+          fromStatus: e.fromStatus,
+          toStatus: e.toStatus,
+          note: e.note,
+          actor: e.actor,
+          createdAt: e.createdAt.toISOString(),
+        });
+        eventsByUnit.set(e.carUnitId, list);
+      }
+    }
+
     return rows.map((r) => {
       const a = byUnit.get(r.id);
       return {
@@ -88,6 +132,7 @@ export async function listUnitViews(tenantId: string): Promise<UnitView[]> {
               toAt: a.toAt.toISOString(),
             }
           : null,
+        events: eventsByUnit.get(r.id) ?? [],
       };
     });
   });
@@ -149,4 +194,67 @@ export async function updateUnit(
 
 export async function deleteUnit(tenantId: string, id: string): Promise<void> {
   await withTenant(tenantId, (tx) => tx.delete(carUnits).where(eq(carUnits.id, id)));
+}
+
+export type UnitStatusResult = "ok" | "not_found" | "noop";
+
+/**
+ * Change a unit's manual status AND append an audit-log row in one transaction —
+ * the status write and the evidence trail can never diverge. `actor` is the
+ * deciding admin (email); `note` records what service / result. Returns "noop"
+ * when the status is unchanged (no event written).
+ */
+export async function setUnitStatus(
+  tenantId: string,
+  unitId: string,
+  toStatus: CarUnitStatus,
+  note: string | null,
+  actor: string | null,
+): Promise<UnitStatusResult> {
+  return withTenant(tenantId, async (tx) => {
+    const [cur] = await tx
+      .select({ status: carUnits.status })
+      .from(carUnits)
+      .where(eq(carUnits.id, unitId))
+      .limit(1);
+    if (!cur) return "not_found";
+    if (cur.status === toStatus) return "noop";
+
+    await tx
+      .update(carUnits)
+      .set({ status: toStatus })
+      .where(eq(carUnits.id, unitId));
+    await tx.insert(unitEvents).values({
+      tenantId,
+      carUnitId: unitId,
+      action: "status_change",
+      fromStatus: cur.status,
+      toStatus,
+      note: note?.trim() || null,
+      actor,
+    });
+    return "ok";
+  });
+}
+
+/** Full status-change history for one unit, newest first (audit view). */
+export async function listUnitEvents(
+  tenantId: string,
+  unitId: string,
+): Promise<UnitEventView[]> {
+  return withTenant(tenantId, async (tx) => {
+    const rows = await tx
+      .select({
+        id: unitEvents.id,
+        fromStatus: unitEvents.fromStatus,
+        toStatus: unitEvents.toStatus,
+        note: unitEvents.note,
+        actor: unitEvents.actor,
+        createdAt: unitEvents.createdAt,
+      })
+      .from(unitEvents)
+      .where(eq(unitEvents.carUnitId, unitId))
+      .orderBy(desc(unitEvents.createdAt));
+    return rows.map((e) => ({ ...e, createdAt: e.createdAt.toISOString() }));
+  });
 }

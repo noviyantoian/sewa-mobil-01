@@ -11,6 +11,7 @@ import {
   createUnit,
   updateUnit,
   deleteUnit,
+  setUnitStatus,
 } from "@/lib/repo";
 
 // Allow local /images/* (seed) or our own storage origins (Supabase / R2).
@@ -203,6 +204,49 @@ export async function deleteUnitAction(id: string): Promise<CarActionResult> {
   } catch (e) {
     if (pgCode(e) === "23503") return { ok: false, error: "unit_in_use" };
     console.error("[deleteUnitAction]", e);
+    return { ok: false, error: "failed" };
+  }
+}
+
+export type UnitStatusActionResult =
+  | { ok: true; by: string | null }
+  | { ok: false; error: string };
+
+const unitStatusSchema = z.object({
+  status: z.enum(["available", "maintenance"]),
+  // A note is mandatory — every status change must record a reason (anti-fraud).
+  note: z.string().trim().min(2).max(500),
+});
+
+/**
+ * Quick action from the armada list: flip a unit between available/maintenance
+ * with a mandatory note (what service / completion result). Records the deciding
+ * admin (email) + note in the append-only audit log via `setUnitStatus`.
+ */
+export async function updateUnitStatusAction(
+  unitId: string,
+  raw: unknown,
+): Promise<UnitStatusActionResult> {
+  try {
+    const user = await requireAdmin();
+    if (!idSchema.safeParse(unitId).success) return { ok: false, error: "invalid" };
+    const parsed = unitStatusSchema.safeParse(raw);
+    if (!parsed.success) return { ok: false, error: "invalid" };
+    const tenantId = await getActiveTenantId();
+    const by = user.email ?? null;
+    const res = await setUnitStatus(
+      tenantId,
+      unitId,
+      parsed.data.status,
+      parsed.data.note,
+      by,
+    );
+    if (res === "not_found") return { ok: false, error: "not_found" };
+    if (res === "noop") return { ok: false, error: "noop" };
+    revalidateFleet();
+    return { ok: true, by };
+  } catch (e) {
+    console.error("[updateUnitStatusAction]", e);
     return { ok: false, error: "failed" };
   }
 }
