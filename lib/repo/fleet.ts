@@ -203,6 +203,16 @@ export async function listDrivers(tenantId: string): Promise<DriverRow[]> {
   );
 }
 
+export async function getDriverById(
+  tenantId: string,
+  id: string,
+): Promise<DriverRow | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [d] = await tx.select().from(drivers).where(eq(drivers.id, id)).limit(1);
+    return d ?? null;
+  });
+}
+
 // ── Writes (admin CMS) ───────────────────────────────────────────────────────
 
 export interface CarImageInput {

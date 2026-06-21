@@ -20,7 +20,6 @@ import { CarCell } from "@/components/admin/CarCell";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatDateRange } from "@/lib/format";
 import type { AdminBooking, AdminDriver } from "../types";
-import { DriverFormDialog } from "./DriverFormDialog";
 import { assignDriverAction, deleteDriverAction } from "./actions";
 
 type Tone = "neutral" | "success" | "accent" | "outline";
@@ -47,8 +46,6 @@ export function SopirClient({
   const assignable = bookings.filter((b) => b.status === "confirmed" && b.mode === "withDriver");
   const [active, setActive] = useState<AdminBooking | null>(null);
   const [assigning, setAssigning] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<AdminDriver | null>(null);
   const [deleting, setDeleting] = useState<AdminDriver | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -92,13 +89,7 @@ export function SopirClient({
           </span>
           <h1 className="display-sm">{t("admin.driversTitle")}</h1>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
+        <Button variant="primary" onClick={() => router.push("/admin/sopir/baru")}>
           <Plus size={17} weight="bold" />
           {t("admin.addDriver")}
         </Button>
@@ -147,10 +138,7 @@ export function SopirClient({
             <DriverCard
               key={d.id}
               driver={d}
-              onEdit={() => {
-                setEditing(d);
-                setFormOpen(true);
-              }}
+              onEdit={() => router.push(`/admin/sopir/${d.id}`)}
               onDelete={() => setDeleting(d)}
             />
           ))}
@@ -216,16 +204,6 @@ export function SopirClient({
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-
-      {/* Driver create/edit form */}
-      {formOpen && (
-        <DriverFormDialog
-          key={editing?.id ?? "new"}
-          open={formOpen}
-          driver={editing}
-          onClose={() => setFormOpen(false)}
-        />
-      )}
 
       {/* Driver delete confirm */}
       <Dialog.Root open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>

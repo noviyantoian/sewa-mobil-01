@@ -47,6 +47,20 @@ export async function listBookings(tenantId: string): Promise<BookingRow[]> {
   );
 }
 
+export async function listBookingsForDriver(
+  tenantId: string,
+  driverId: string,
+): Promise<BookingRow[]> {
+  return withTenant(tenantId, (tx) =>
+    tx
+      .select()
+      .from(bookings)
+      .where(eq(bookings.driverId, driverId))
+      .orderBy(desc(bookings.createdAt))
+      .limit(50),
+  );
+}
+
 export async function updateBookingStatus(
   tenantId: string,
   bookingId: string,
