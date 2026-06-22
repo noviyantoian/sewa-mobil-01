@@ -15,6 +15,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "db:migrate:native": "node --env-file=.env scripts/migrate.mjs",
     "db:verify": "node --env-file=.env scripts/verify-db.mjs"
   },
   "dependencies": {

@@ -5,18 +5,20 @@ import { tenants } from "@/lib/db/schema";
 /**
  * Resolve the active tenant id.
  *
- * STAND-IN until Fase 1 host-based resolution (middleware reads the request
- * Host → tenant). For now it returns the demo tenant. Uses the unscoped `db`
- * handle on purpose: a host→tenant lookup has no tenant context yet.
+ * Deploy model: ONE app instance per client (instance-per-tenant). Each instance
+ * is pinned to a single tenant via the `TENANT_SLUG` env, and its database holds
+ * exactly that one tenant — so there is no per-request host→tenant resolution to
+ * do. Uses the unscoped `db` handle (owner role, BYPASSRLS) because this lookup
+ * runs before any tenant context / RLS scope exists.
  *
- * Override the target with the DEMO_TENANT_SLUG env var.
+ * `DEMO_TENANT_SLUG` is kept as a fallback for backward compatibility with
+ * existing `.env` files; defaults to "demo".
  */
-const DEV_TENANT_SLUG = process.env.DEMO_TENANT_SLUG ?? "demo";
+const TENANT_SLUG =
+  process.env.TENANT_SLUG ?? process.env.DEMO_TENANT_SLUG ?? "demo";
 
-// SINGLE-TENANT ONLY. Module-level cache persists across requests in a worker —
-// safe because the demo tenant id never changes. TODO(Fase 1): delete this whole
-// module and resolve host → tenant per request (a stale id here would misroute
-// RLS across tenants).
+// One tenant per instance → the id never changes for the life of the worker, so
+// caching it module-level is correct (not a multi-tenant footgun here).
 let cached: string | undefined;
 
 export async function getActiveTenantId(): Promise<string> {
@@ -24,11 +26,11 @@ export async function getActiveTenantId(): Promise<string> {
   const [row] = await db
     .select({ id: tenants.id })
     .from(tenants)
-    .where(eq(tenants.slug, DEV_TENANT_SLUG))
+    .where(eq(tenants.slug, TENANT_SLUG))
     .limit(1);
   if (!row) {
     throw new Error(
-      `No tenant for slug "${DEV_TENANT_SLUG}" — seed one first (see lib/db/README.md)`,
+      `No tenant for slug "${TENANT_SLUG}" — seed one first (see lib/db/README.md)`,
     );
   }
   cached = row.id;
