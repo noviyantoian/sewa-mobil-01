@@ -8,18 +8,27 @@ import {
   authVerification,
 } from "@/lib/db/schema";
 
-const secret = process.env.BETTER_AUTH_SECRET;
+const isProduction = process.env.NODE_ENV === "production";
+// `next build` imports this module to collect page data, but the per-instance
+// secret/URL aren't present then — they're supplied at RUNTIME via the PM2
+// --env-file (build-once, deploy-many). Relax the hard requirements during the
+// build phase only; runtime still enforces them (fail-fast on a misconfigured
+// instance).
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+
+const secret =
+  process.env.BETTER_AUTH_SECRET ??
+  (isBuildPhase ? "build-phase-placeholder-unused-at-runtime" : undefined);
 if (!secret) {
   throw new Error(
     "BETTER_AUTH_SECRET is not set — generate one (openssl rand -base64 32) and add it to .env",
   );
 }
 
-const isProduction = process.env.NODE_ENV === "production";
-// In production behind a reverse proxy (Caddy terminates TLS, forwards HTTP to
+// In production behind a reverse proxy (nginx terminates TLS, forwards HTTP to
 // Node), the request protocol is http, so better-auth would otherwise drop the
 // Secure cookie flag and could mis-resolve its origin. Require the public URL.
-if (isProduction && !process.env.BETTER_AUTH_URL) {
+if (isProduction && !isBuildPhase && !process.env.BETTER_AUTH_URL) {
   throw new Error(
     "BETTER_AUTH_URL must be set in production (e.g. https://rental.klien.com)",
   );
