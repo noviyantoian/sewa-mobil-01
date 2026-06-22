@@ -3,11 +3,22 @@
 import { Suspense, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { LockSimple } from "@phosphor-icons/react";
-import { createClient } from "@/lib/supabase/client";
+import { signIn } from "@/lib/auth/client";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { Logo } from "@/components/layout/Logo";
 import { useT } from "@/lib/i18n/I18nProvider";
+
+/** True only for relative paths that resolve to the current origin. */
+function isSameOriginPath(dest: string): boolean {
+  if (!dest.startsWith("/")) return false;
+  try {
+    const url = new URL(dest, window.location.origin);
+    return url.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
 
 function LoginForm() {
   const t = useT();
@@ -22,8 +33,7 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { error: authError } = await signIn.email({
         email: email.trim(),
         password,
       });
@@ -33,13 +43,14 @@ function LoginForm() {
         return;
       }
       const dest = params.get("redirect") ?? "/admin";
-      // Only allow internal same-origin paths (no open redirect to //evil.com).
-      const safe = dest.startsWith("/") && !dest.startsWith("//") ? dest : "/admin";
+      // Resolve against the current origin and confirm it stays same-origin —
+      // blocks open redirects incl. //evil.com and /\evil.com normalization.
+      const safe = isSameOriginPath(dest) ? dest : "/admin";
       // Full navigation (not router.replace) so the fresh auth cookie reaches the
       // middleware on the next request — avoids the "stuck loading" redirect race.
       window.location.assign(safe);
     } catch {
-      // Misconfigured Supabase env or network error — never leave the button spinning.
+      // Network error or unexpected failure — never leave the button spinning.
       setError(t("admin.loginError"));
       setLoading(false);
     }
