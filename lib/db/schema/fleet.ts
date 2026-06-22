@@ -17,6 +17,8 @@ export type CarTransmission = "auto" | "manual";
 export type CarImageKind = "exterior" | "side" | "interior" | "gallery";
 export type LocationType = "office" | "airport" | "hotel" | "other";
 export type DriverStatus = "idle" | "assigned" | "off";
+/** Manual unit state. "out/running" is derived from bookings, never stored here. */
+export type CarUnitStatus = "available" | "maintenance";
 
 /** Rental fleet. Mirrors lib/mock/cars.ts; rates/deposit in IDR (integer). */
 export const cars = pgTable(
@@ -42,6 +44,16 @@ export const cars = pgTable(
     rateWithDriver: integer("rate_with_driver").notNull().default(0),
     deposit: integer("deposit").notNull().default(0),
     available: boolean("available").notNull().default(true),
+    /** Customer never sees plates — a model is an inventory of N identical units. */
+    unitCount: integer("unit_count").notNull().default(1),
+    /**
+     * When true, availability is enforced by stock: a model is bookable for a
+     * window only if `unit_count − overlapping bookings > 0`. When false (legacy
+     * default) the model always shows and the customer confirms manually.
+     */
+    trackUnits: boolean("track_units").notNull().default(false),
+    /** Cars that cannot be self-driven — booking is locked to with-driver mode. */
+    driverRequired: boolean("driver_required").notNull().default(false),
     features: jsonb("features").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     doors: integer("doors"),
     luggage: integer("luggage"),
@@ -74,6 +86,47 @@ export const locations = pgTable("locations", {
   city: text("city").notNull(),
   area: text("area").notNull(),
   type: text("type").$type<LocationType>().notNull().default("office"),
+});
+
+/**
+ * Per-unit plate registry. A car model is an inventory of N physical units, each
+ * with a distinct plate (nomor polisi). Admin ties a booking to a specific unit
+ * to track which car went out with which driver. Optional — cars work without it.
+ */
+export const carUnits = pgTable("car_units", {
+  id: pk(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  carId: uuid("car_id")
+    .notNull()
+    .references(() => cars.id, { onDelete: "cascade" }),
+  plate: text("plate").notNull(),
+  label: text("label"),
+  status: text("status").$type<CarUnitStatus>().notNull().default("available"),
+  createdAt: createdAt(),
+});
+
+/**
+ * Append-only audit log of manual unit status changes (send to service, mark
+ * done, etc.). Records the deciding admin (`actor`), a free-text note, and the
+ * from→to states so the history is trustworthy evidence (anti-fraud). Never
+ * updated or deleted.
+ */
+export const unitEvents = pgTable("unit_events", {
+  id: pk(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  carUnitId: uuid("car_unit_id")
+    .notNull()
+    .references(() => carUnits.id, { onDelete: "cascade" }),
+  action: text("action").notNull().default("status_change"),
+  fromStatus: text("from_status"),
+  toStatus: text("to_status").notNull(),
+  note: text("note"),
+  actor: text("actor"),
+  createdAt: createdAt(),
 });
 
 /** Drivers for with-driver mode. Mirrors lib/mock/drivers.ts. */

@@ -25,12 +25,13 @@ FolkaDrive adalah website rental mobil B2C dengan dua mode: **lepas kunci (self-
 | Form | `react-hook-form` + `zod` |
 | Tanggal | `date-fns` |
 | Package manager | pnpm |
-| Output build | `output: 'standalone'` di `next.config.ts` (siap VPS) |
-| Hosting (rencana) | **VPS self-hosted** + Caddy + PM2 — **belum di-deploy sprint ini** |
-| Database (rencana) | PostgreSQL 16 native + Drizzle ORM — **belum dipasang sprint ini** |
-| Auth (rencana) | better-auth OTP — **belum dipasang sprint ini** |
-| Pembayaran (rencana) | Midtrans — **belum dipasang sprint ini** |
-| Sumber data sprint ini | `lib/mock/*` (cars, bookings, users, drivers, locations) |
+| Output build | `output: 'standalone'` di `next.config.ts` |
+| Hosting | **VPS self-hosted, deploy manual per-klien** — NGINX + PM2 + Postgres native. Lihat [`docs/DEPLOY-RUNBOOK.md`](docs/DEPLOY-RUNBOOK.md) + `scripts/new-client.sh` |
+| Database | **PostgreSQL 16 native** + Drizzle ORM. 1 DB/klien; RLS via `SET LOCAL ROLE app_user`. Migrasi: `pnpm db:migrate:native` (`scripts/migrate.mjs`) |
+| Auth | **better-auth** (email+password, sesi Postgres) — `lib/auth/*`. Admin = email di `ADMIN_EMAILS` |
+| Storage | **Cloudflare R2** (wajib) — `lib/storage/r2.ts`; tak ada fallback |
+| Data | **DB native via `lib/repo/*`** (bukan `lib/mock/*` lagi). Tiap instance pin 1 tenant via `TENANT_SLUG` |
+| Pembayaran (rencana) | Midtrans — **belum dipasang** |
 
 ---
 
@@ -196,12 +197,16 @@ pnpm format       # prettier --write
 
 ## 11. Out of Scope (jangan dikerjakan tanpa konfirmasi)
 
-**Sprint backend (berikutnya):**
-- Postgres + Drizzle schema nyata (sprint ini pakai mock)
-- better-auth OTP email/WA nyata + rate limit
-- Upload KTP/SIM ke filesystem terenkripsi
+**Sudah selesai (backend per-client deploy):**
+- ✅ Postgres native + Drizzle + RLS, migration runner (`scripts/migrate.mjs`)
+- ✅ better-auth (email+password) — `lib/auth/*`
+- ✅ Storage R2-only — `lib/storage/r2.ts`
+- ✅ Deploy tooling: NGINX + PM2 + `scripts/new-client.sh` + [`docs/DEPLOY-RUNBOOK.md`](docs/DEPLOY-RUNBOOK.md)
+
+**Masih backlog (jangan tanpa konfirmasi):**
+- OTP email/WA + rate-limit lanjutan (login dasar sudah ada)
+- Upload KTP/SIM ke storage terenkripsi + retensi
 - Integrasi Midtrans + webhook + refund
-- Deploy ke VPS (Caddyfile, PM2 ecosystem, Dockerfile, runbook)
 
 **PRD §5.2 (Fase 2+):**
 - OCR identitas otomatis & e-contract digital

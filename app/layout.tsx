@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { TenantSettingsProvider } from "@/lib/tenant/TenantProvider";
+import { getActiveTenantSettings } from "@/lib/tenant/features";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { SITE, organizationSchema, websiteSchema } from "@/lib/seo";
 
@@ -61,14 +63,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const tenantSettings = await getActiveTenantSettings();
+
   return (
     <html lang="id" className={inter.variable}>
       <body>
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
-        <I18nProvider>
-          {children}
-          <Toaster
+        <TenantSettingsProvider value={tenantSettings}>
+          <I18nProvider>
+            {children}
+            <Toaster
             position="bottom-center"
             toastOptions={{
               style: {
@@ -77,8 +82,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 fontFamily: "var(--font-sans)",
               },
             }}
-          />
-        </I18nProvider>
+            />
+          </I18nProvider>
+        </TenantSettingsProvider>
       </body>
     </html>
   );

@@ -12,6 +12,8 @@ export const SITE = {
   legalName: "FolkaDrive Rental",
   url: SITE_URL,
   telephone: "+62-811-2000-800",
+  /** WhatsApp number, digits only (wa.me format). */
+  whatsapp: "628112000800",
   email: "halo@folkadrive.local",
   address: {
     street: "Jl. Jenderal Sudirman",

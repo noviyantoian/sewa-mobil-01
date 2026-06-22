@@ -28,6 +28,9 @@ export interface CarFormState {
   rateWithDriver: string;
   deposit: string;
   available: boolean;
+  driverRequired: boolean;
+  trackUnits: boolean;
+  unitCount: string;
   features: string[];
   doors: string;
   luggage: string;
@@ -52,6 +55,9 @@ export function emptyCarForm(): CarFormState {
     rateWithDriver: "",
     deposit: "",
     available: true,
+    driverRequired: false,
+    trackUnits: false,
+    unitCount: "1",
     features: [],
     doors: "",
     luggage: "",
@@ -122,6 +128,9 @@ export function CarForm({
       rateWithDriver: Number(f.rateWithDriver),
       deposit: Number(f.deposit),
       available: f.available,
+      driverRequired: f.driverRequired,
+      trackUnits: f.trackUnits,
+      unitCount: f.trackUnits ? Math.max(1, Number(f.unitCount) || 1) : 1,
       features: f.features,
       doors: f.doors ? Number(f.doors) : null,
       luggage: f.luggage ? Number(f.luggage) : null,
@@ -304,15 +313,50 @@ export function CarForm({
       </Section>
 
       <Section title={t("admin.carStatusSection")}>
-        <label className="flex cursor-pointer items-center gap-2.5">
-          <input
-            type="checkbox"
-            checked={f.available}
-            onChange={(e) => setF((p) => ({ ...p, available: e.target.checked }))}
-            className="h-4 w-4 cursor-pointer accent-[var(--color-accent)]"
-          />
-          <span className="text-[14px] text-[var(--color-body)]">{t("admin.fAvailable")}</span>
-        </label>
+        <div className="flex flex-col gap-4">
+          <label className="flex cursor-pointer items-center gap-2.5">
+            <input
+              type="checkbox"
+              checked={f.available}
+              onChange={(e) => setF((p) => ({ ...p, available: e.target.checked }))}
+              className="h-4 w-4 cursor-pointer accent-[var(--color-accent)]"
+            />
+            <span className="text-[14px] text-[var(--color-body)]">{t("admin.fAvailable")}</span>
+          </label>
+
+          <label className="flex cursor-pointer items-start gap-2.5">
+            <input
+              type="checkbox"
+              checked={f.driverRequired}
+              onChange={(e) => setF((p) => ({ ...p, driverRequired: e.target.checked }))}
+              className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--color-accent)]"
+            />
+            <span className="flex flex-col">
+              <span className="text-[14px] text-[var(--color-body)]">{t("admin.fDriverRequired")}</span>
+              <span className="text-[12px] text-[var(--color-mute)]">{t("admin.fDriverRequiredHint")}</span>
+            </span>
+          </label>
+
+          <div className="border-t border-[var(--color-hairline)] pt-4">
+            <label className="flex cursor-pointer items-start gap-2.5">
+              <input
+                type="checkbox"
+                checked={f.trackUnits}
+                onChange={(e) => setF((p) => ({ ...p, trackUnits: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--color-accent)]"
+              />
+              <span className="flex flex-col">
+                <span className="text-[14px] text-[var(--color-body)]">{t("admin.fTrackUnits")}</span>
+                <span className="text-[12px] text-[var(--color-mute)]">{t("admin.fTrackUnitsHint")}</span>
+              </span>
+            </label>
+            {f.trackUnits && (
+              <p className="mt-3 text-[12px] text-[var(--color-mute)]">
+                {t("admin.fUnitsAuto")}
+              </p>
+            )}
+          </div>
+        </div>
       </Section>
 
       {error && (

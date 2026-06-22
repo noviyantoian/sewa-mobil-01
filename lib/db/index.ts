@@ -10,8 +10,8 @@ if (!url) {
 
 /**
  * Reuse one postgres.js client across HMR reloads in dev so we don't exhaust
- * the connection pool. `prepare: false` is required for the Supabase
- * transaction pooler (pgBouncer) and harmless on a direct connection.
+ * the connection pool. `prepare: false` is harmless on a direct native Postgres
+ * connection (and was required for the legacy Supabase transaction pooler).
  */
 const globalForDb = globalThis as unknown as {
   __sqlClient?: ReturnType<typeof postgres>;
@@ -20,9 +20,10 @@ const client = globalForDb.__sqlClient ?? postgres(url, { prepare: false });
 if (process.env.NODE_ENV !== "production") globalForDb.__sqlClient = client;
 
 /**
- * Unscoped handle, connected as `postgres` (which has BYPASSRLS on Supabase).
- * Use ONLY for platform-level work that has no tenant yet — e.g. resolving a
- * host → tenant_id from `domains`/`tenants` (Fase 1). NOT for tenant data.
+ * Unscoped handle, connected as the owner role (`folkadrive`, BYPASSRLS — the
+ * native mirror of Supabase's `postgres`). Use ONLY for bootstrap work that has
+ * no tenant context yet — e.g. `getActiveTenantId` reading `tenants` by slug.
+ * NOT for tenant data (that goes through withTenant → app_user).
  */
 export const db = drizzle(client, { schema });
 export type Db = typeof db;

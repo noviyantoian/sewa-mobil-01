@@ -8,7 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createdAt, pk } from "./_shared";
 import { tenants } from "./tenancy";
-import { cars, drivers, locations } from "./fleet";
+import { carUnits, cars, drivers, locations } from "./fleet";
 import { users } from "./auth";
 
 export type BookingMode = "selfDrive" | "withDriver";
@@ -39,12 +39,17 @@ export const bookings = pgTable(
       .references(() => tenants.id, { onDelete: "cascade" }),
     code: text("code").notNull(),
     carId: uuid("car_id").references(() => cars.id),
+    /** Specific physical unit (plate) assigned by admin. Null until assigned. */
+    carUnitId: uuid("car_unit_id").references(() => carUnits.id),
     userId: uuid("user_id").references(() => users.id),
     driverId: uuid("driver_id").references(() => drivers.id),
     customerName: text("customer_name"),
     customerPhone: text("customer_phone"),
     pickupLocationId: uuid("pickup_location_id").references(() => locations.id),
     returnLocationId: uuid("return_location_id").references(() => locations.id),
+    /** Free-text customer address for delivery/pickup (PRD §7 jemput/antar). */
+    pickupAddress: text("pickup_address"),
+    returnAddress: text("return_address"),
     mode: text("mode").$type<BookingMode>().notNull().default("selfDrive"),
     pickupType: text("pickup_type").$type<PickupType>().notNull().default("office"),
     fromAt: timestamp("from_at", { withTimezone: true }).notNull(),
@@ -73,6 +78,9 @@ export const documents = pgTable("documents", {
     .$type<VerifyStatus>()
     .notNull()
     .default("pending"),
+  /** Audit trail for manual verification: which admin decided, and when. */
+  verifiedBy: text("verified_by"),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
 

@@ -1,11 +1,9 @@
 "use client";
 
 import type { UseFormRegister, FieldErrors } from "react-hook-form";
-import { ShieldCheck } from "@phosphor-icons/react";
+import { WhatsappLogo } from "@phosphor-icons/react";
 import { Input, Select, Field } from "@/components/ui/Input";
-import { Badge } from "@/components/ui/Badge";
 import { DocumentUpload } from "@/components/booking/DocumentUpload";
-import { PaymentMethods, type PaymentMethod } from "@/components/booking/PaymentMethods";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR, cn } from "@/lib/format";
 import type { Car } from "@/lib/mock/cars";
@@ -95,15 +93,19 @@ export function StepPayment({
   setAddons,
   scheme,
   setScheme,
-  payment,
-  setPayment,
+  pickupAddress,
+  setPickupAddress,
+  returnAddress,
+  setReturnAddress,
 }: {
   addons: Record<AddonKey, boolean>;
   setAddons: (next: Record<AddonKey, boolean>) => void;
   scheme: Scheme;
   setScheme: (s: Scheme) => void;
-  payment: PaymentMethod;
-  setPayment: (p: PaymentMethod) => void;
+  pickupAddress: string;
+  setPickupAddress: (v: string) => void;
+  returnAddress: string;
+  setReturnAddress: (v: string) => void;
 }) {
   const t = useT();
   const addonList: { key: AddonKey; title: string; desc: string }[] = [
@@ -150,6 +152,29 @@ export function StepPayment({
             );
           })}
         </div>
+        {addons.delivery && (
+          <div className="mt-4 grid grid-cols-1 gap-4 rounded-[12px] border border-[var(--color-accent)] bg-[var(--color-accent-soft)] p-4 sm:grid-cols-2">
+            <Field label={t("checkout.deliveryAddrPickup")} htmlFor="pickupAddr">
+              <Input
+                id="pickupAddr"
+                value={pickupAddress}
+                onChange={(e) => setPickupAddress(e.target.value)}
+                placeholder={t("checkout.deliveryAddrPlaceholder")}
+              />
+            </Field>
+            <Field label={t("checkout.deliveryAddrReturn")} htmlFor="returnAddr">
+              <Input
+                id="returnAddr"
+                value={returnAddress}
+                onChange={(e) => setReturnAddress(e.target.value)}
+                placeholder={t("checkout.deliveryAddrPlaceholder")}
+              />
+            </Field>
+            <p className="text-[12px] text-[var(--color-mute)] sm:col-span-2">
+              {t("checkout.deliveryAddrHint")}
+            </p>
+          </div>
+        )}
       </div>
 
       <div>
@@ -183,14 +208,20 @@ export function StepPayment({
         <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[var(--color-ink)]">
           {t("checkout.payment")}
         </h2>
-        <div className="mt-4">
-          <PaymentMethods value={payment} onChange={setPayment} />
-        </div>
-        <div className="mt-4 inline-flex items-center gap-2">
-          <Badge tone="success">
-            <ShieldCheck size={13} weight="fill" />
-            {t("checkout.secure")}
-          </Badge>
+        <div className="mt-4 flex items-start gap-3 rounded-[12px] border border-[var(--color-hairline-strong)] bg-[var(--color-surface-soft)] p-4">
+          <WhatsappLogo
+            size={22}
+            weight="fill"
+            className="mt-0.5 shrink-0 text-[var(--color-success)]"
+          />
+          <div>
+            <p className="text-[14px] font-semibold text-[var(--color-ink)]">
+              {t("checkout.waPayTitle")}
+            </p>
+            <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-mute)]">
+              {t("checkout.waPayDesc")}
+            </p>
+          </div>
         </div>
       </div>
     </div>

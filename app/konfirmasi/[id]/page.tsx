@@ -32,6 +32,8 @@ export default async function ConfirmationPage({
         from={toDateStr(booking.fromAt)}
         to={toDateStr(booking.toAt)}
         total={booking.total}
+        mode={booking.mode}
+        customerName={booking.customerName ?? ""}
         car={car ? { brand: car.brand, name: car.name, exterior: car.exterior } : null}
       />
       <Footer />

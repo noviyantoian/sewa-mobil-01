@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { List, X } from "@phosphor-icons/react";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { useTenantSettings } from "@/lib/tenant/TenantProvider";
 import { Button } from "@/components/ui/Button";
 import { LangSwitch } from "./LangSwitch";
 import { Logo } from "./Logo";
@@ -17,6 +18,7 @@ const navItems = [
 
 export function Header() {
   const t = useT();
+  const { guestCheckout } = useTenantSettings();
   const [open, setOpen] = useState(false);
 
   return (
@@ -42,11 +44,13 @@ export function Header() {
           <div className="hidden sm:block">
             <LangSwitch />
           </div>
-          <Link href="/login" className="hidden md:inline-flex">
-            <Button variant="ghost" size="sm">
-              {t("nav.login")}
-            </Button>
-          </Link>
+          {!guestCheckout && (
+            <Link href="/login" className="hidden md:inline-flex">
+              <Button variant="ghost" size="sm">
+                {t("nav.login")}
+              </Button>
+            </Link>
+          )}
           <Link href="/cari" className="hidden md:inline-flex">
             <Button variant="primary" size="sm">
               {t("nav.search")}
@@ -80,11 +84,13 @@ export function Header() {
             <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--color-hairline)] pt-4">
               <LangSwitch />
               <div className="flex gap-2">
-                <Link href="/login" onClick={() => setOpen(false)}>
-                  <Button variant="secondary" size="sm">
-                    {t("nav.login")}
-                  </Button>
-                </Link>
+                {!guestCheckout && (
+                  <Link href="/login" onClick={() => setOpen(false)}>
+                    <Button variant="secondary" size="sm">
+                      {t("nav.login")}
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/cari" onClick={() => setOpen(false)}>
                   <Button variant="primary" size="sm">
                     {t("nav.search")}

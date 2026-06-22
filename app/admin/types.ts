@@ -21,6 +21,33 @@ export interface AdminBooking {
   status: BookingStatus;
   createdAt: string; // ISO
   driverId: string | null;
+  carUnitId: string | null; // assigned physical unit (plate), null until set
+  carUnitPlate: string | null; // resolved plate for display
+}
+
+/** A physical fleet unit with live runtime status, for dashboard + armada. */
+export interface AdminUnit {
+  id: string;
+  carId: string;
+  carName: string;
+  plate: string;
+  label: string | null;
+  status: "available" | "maintenance";
+  running: boolean; // out on an active/confirmed booking right now
+  booking: {
+    code: string;
+    customerName: string | null;
+    driverName: string | null;
+    toAt: string;
+  } | null;
+  events: {
+    id: string;
+    fromStatus: string | null;
+    toStatus: string;
+    note: string | null;
+    actor: string | null;
+    createdAt: string; // ISO
+  }[];
 }
 
 export interface AdminDriver {
@@ -47,8 +74,19 @@ export interface BookingDetailVM {
   deposit: number;
   car: { id: string; slug: string; name: string; brand: string } | null;
   driverId: string | null;
+  carUnitId: string | null; // assigned physical unit (plate)
+  units: { id: string; plate: string; label: string | null; running: boolean }[]; // assignable units of this car
   pickup: string | null; // "City — Area"
   ret: string | null;
-  documents: { id: string; type: string; url: string; verifyStatus: string }[];
+  pickupAddress: string | null; // customer delivery address
+  returnAddress: string | null;
+  documents: {
+    id: string;
+    type: string;
+    url: string;
+    verifyStatus: string;
+    verifiedBy: string | null;
+    verifiedAt: string | null;
+  }[];
   drivers: { id: string; name: string }[]; // assignable
 }

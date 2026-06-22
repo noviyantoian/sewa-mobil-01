@@ -19,6 +19,16 @@ export type DomainType = "subdomain" | "byod" | "managed";
 export type SslStatus = "pending" | "active" | "failed";
 
 /**
+ * Per-tenant operational settings (not plan-tier gated). Stored in
+ * `tenants.settings` jsonb so new flags don't need a migration.
+ * `guestCheckout` absent → treated as true (booking without login).
+ */
+export type TenantSettings = {
+  /** Allow booking without a customer account. Default true. */
+  guestCheckout?: boolean;
+};
+
+/**
  * Global plan catalog (not tenant-scoped, no RLS). `features` is the flag set
  * that gates UI/API per tier — kept in sync with lib/tenant/features.ts (Fase 2).
  */
@@ -28,6 +38,8 @@ export const plans = pgTable("plans", {
   priceMonth: integer("price_month").notNull().default(0),
   features: jsonb("features").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
   maxCars: integer("max_cars").notNull().default(0),
+  /** Seat limit (staff users) per tier. NULL = unlimited (enterprise). */
+  maxUsers: integer("max_users"),
 });
 
 /**
@@ -41,6 +53,10 @@ export const tenants = pgTable("tenants", {
   planId: text("plan_id").references(() => plans.id),
   theme: jsonb("theme")
     .$type<Record<string, unknown>>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  settings: jsonb("settings")
+    .$type<TenantSettings>()
     .notNull()
     .default(sql`'{}'::jsonb`),
   status: text("status").$type<TenantStatus>().notNull().default("active"),

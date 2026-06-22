@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { formatIDR, formatDateRange } from "@/lib/format";
+import { SITE } from "@/lib/seo";
 import type { BookingStatus } from "@/lib/db/schema";
 
 export interface ConfirmationData {
@@ -21,12 +22,36 @@ export interface ConfirmationData {
   from: string;
   to: string;
   total: number;
+  mode: "selfDrive" | "withDriver";
+  customerName: string;
   car: { brand: string; name: string; exterior: string } | null;
 }
 
-export function ConfirmationClient({ code, status, from, to, total, car }: ConfirmationData) {
+export function ConfirmationClient({
+  code,
+  status,
+  from,
+  to,
+  total,
+  mode,
+  customerName,
+  car,
+}: ConfirmationData) {
   const t = useT();
   const steps = [t("confirm.ns1"), t("confirm.ns2"), t("confirm.ns3")];
+
+  // Pre-filled WhatsApp order message — customer taps to send the booking
+  // summary to the owner, who arranges payment (no online gateway, opsi A).
+  const waMessage = t("confirm.waMessage", {
+    site: SITE.name,
+    code,
+    car: car ? `${car.brand} ${car.name}` : "-",
+    range: formatDateRange(from, to),
+    mode: mode === "withDriver" ? t("hero.modeWithDriver") : t("hero.modeSelfDrive"),
+    total: formatIDR(total),
+    name: customerName,
+  });
+  const waHref = `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(waMessage)}`;
 
   return (
     <main className="bg-[var(--color-canvas-warm)] pb-20">
@@ -88,9 +113,20 @@ export function ConfirmationClient({ code, status, from, to, total, car }: Confi
           </ol>
         </section>
 
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex w-full items-center justify-center gap-2.5 rounded-[12px] bg-[var(--color-success)] px-6 py-4 text-[16px] font-bold text-white transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-success)]"
+        >
+          <WhatsappLogo size={22} weight="fill" />
+          {t("confirm.waCta")}
+          <ArrowRight size={18} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
+        </a>
+
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link href="/akun/booking" className="flex-1">
-            <Button variant="primary" size="lg" className="w-full">
+            <Button variant="secondary" size="lg" className="w-full">
               {t("confirm.viewBookings")}
               <ArrowRight size={18} weight="bold" />
             </Button>
@@ -103,15 +139,7 @@ export function ConfirmationClient({ code, status, from, to, total, car }: Confi
           </Link>
         </div>
 
-        <a
-          href="https://wa.me/628112000800"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 text-[14px] font-semibold text-[var(--color-body-mid)] transition-colors hover:text-[var(--color-accent)]"
-        >
-          <WhatsappLogo size={18} weight="fill" className="text-[var(--color-success)]" />
-          {t("confirm.needHelp")}
-        </a>
+        <p className="text-center text-[13px] text-[var(--color-mute)]">{t("confirm.waNote")}</p>
       </div>
     </main>
   );

@@ -1,0 +1,36 @@
+# FolkaDrive — per-client reverse proxy vhost (TEMPLATE).
+#
+# Shared-VPS safety: server_name is the EXACT domain — no `default_server`, no
+# wildcard — so this block only ever handles its own host and never intercepts
+# other projects' vhosts on the same nginx.
+#
+# Usage (replace placeholders, then let certbot add TLS):
+#   sudo cp nginx/folkadrive.conf.template /etc/nginx/sites-available/folkadrive-DOMAIN.conf
+#   sudo sed -i 's/{{DOMAIN}}/rental.klien.com/g; s/{{PORT}}/39001/g' \
+#       /etc/nginx/sites-available/folkadrive-DOMAIN.conf
+#   sudo ln -s /etc/nginx/sites-available/folkadrive-DOMAIN.conf /etc/nginx/sites-enabled/
+#   sudo nginx -t && sudo systemctl reload nginx
+#   sudo certbot --nginx -d rental.klien.com      # adds the 443 block + redirect
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{DOMAIN}};
+
+    # Upload cap (KTP/SIM/foto) — matches the app's 5MB limit, a little headroom.
+    client_max_body_size 6m;
+
+    location / {
+        proxy_pass http://127.0.0.1:{{PORT}};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # After certbot adds TLS this is https on :443 → better-auth sees https
+        # and keeps the Secure cookie flag.
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 300s;
+    }
+}
