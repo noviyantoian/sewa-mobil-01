@@ -39,7 +39,9 @@ const MIGRATIONS_DIR = join(
   "migrations",
 );
 
-const sql = postgres(url, { prepare: false, max: 1 });
+// Quiet the expected `DROP ... IF EXISTS` NOTICEs (first run on a fresh DB) so
+// the apply log stays readable; real errors still throw.
+const sql = postgres(url, { prepare: false, max: 1, onnotice: () => {} });
 
 async function appliedSet() {
   await sql`create table if not exists __migrations (
