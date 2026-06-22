@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/lib/auth/guard";
-import { createClient } from "@/lib/supabase/server";
 import { r2Configured, uploadToR2 } from "@/lib/storage/r2";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -50,22 +49,15 @@ export async function POST(req: NextRequest) {
   if (!mime) return NextResponse.json({ error: "bad_type" }, { status: 400 });
   const key = `cars/${randomUUID()}.${EXT[mime]}`;
 
+  // Storage is Cloudflare R2 (set the R2_* env). No Supabase fallback.
+  if (!r2Configured()) {
+    console.error("[upload] R2 not configured — set R2_* env vars");
+    return NextResponse.json({ error: "storage_not_configured" }, { status: 500 });
+  }
+
   try {
-    if (r2Configured()) {
-      const url = await uploadToR2(key, bytes, mime);
-      return NextResponse.json({ url });
-    }
-    // Fallback: Supabase Storage (upload runs as the authenticated admin).
-    const supabase = await createClient();
-    const { error } = await supabase.storage
-      .from("assets")
-      .upload(key, bytes, { contentType: mime, upsert: false });
-    if (error) {
-      console.error("[upload] supabase", error);
-      return NextResponse.json({ error: "upload_failed" }, { status: 500 });
-    }
-    const { data } = supabase.storage.from("assets").getPublicUrl(key);
-    return NextResponse.json({ url: data.publicUrl });
+    const url = await uploadToR2(key, bytes, mime);
+    return NextResponse.json({ url });
   } catch (e) {
     console.error("[upload]", e);
     return NextResponse.json({ error: "upload_failed" }, { status: 500 });

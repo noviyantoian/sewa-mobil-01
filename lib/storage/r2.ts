@@ -1,9 +1,9 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 /**
- * Cloudflare R2 (S3-compatible) image storage. Active only when all R2_* env
- * vars are set; otherwise the upload route falls back to Supabase Storage.
- * Server-side PutObject (no presign needed for <=5MB images).
+ * Cloudflare R2 (S3-compatible) image storage — the only storage backend.
+ * Requires all R2_* env vars; the upload route returns an error when they are
+ * unset (no fallback). Server-side PutObject (no presign needed for <=5MB images).
  */
 export function r2Configured(): boolean {
   return Boolean(
